@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Frontend React application
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # Backend API service
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@database:5432/insight_db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ADX_MCP_URL=http://adx-mcp:8001
+    depends_on:
+      - database
+      - adx-mcp
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+
+  # Azure ADX MCP service
+  adx-mcp:
+    build: ./adx-mcp
+    ports:
+      - "8001:8001"
+    environment:
+      - ADX_CLUSTER_URL=${ADX_CLUSTER_URL}
+      - ADX_DATABASE=${ADX_DATABASE}
+      - ADX_CLIENT_ID=${ADX_CLIENT_ID}
+      - ADX_CLIENT_SECRET=${ADX_CLIENT_SECRET}
+      - ADX_TENANT_ID=${ADX_TENANT_ID}
+    volumes:
+      - ./adx-mcp:/app
+
+  # PostgreSQL database for local testing
+  database:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=insight_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: insight-network
