@@ -81,4 +81,5 @@ htmlcov/
 # mypy
 .mypy_cache/
 .dmypy.json
-dmypy.json
+dmypy.json# Large data files
+EventDataFromDCS.csv
