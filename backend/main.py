@@ -17,6 +17,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import io
 from datetime import datetime
+from services.graph_service import graph_service
 
 load_dotenv()
 
@@ -36,6 +37,11 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localho
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ADX_MCP_URL = os.getenv("ADX_MCP_URL", "http://localhost:8001")
 
+# Neo4j Configuration
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
+
 # Initialize database
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -47,6 +53,13 @@ if OPENAI_API_KEY:
     print("OpenAI client initialized successfully")
 else:
     print("OpenAI API key not provided")
+
+# Initialize Graph service
+graph_connected = graph_service.connect()
+if graph_connected:
+    print("Neo4j graph service initialized successfully")
+else:
+    print("Neo4j graph service connection failed - continuing without graph features")
 
 
 # Pydantic models
@@ -77,7 +90,9 @@ async def health_check():
         "status": "healthy",
         "openai_available": openai_client is not None,
         "database_connected": True,
-        "adx_mcp_url": ADX_MCP_URL
+        "graph_connected": graph_service.is_connected(),
+        "adx_mcp_url": ADX_MCP_URL,
+        "neo4j_uri": NEO4J_URI
     }
 
 
