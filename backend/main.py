@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 import io
 from datetime import datetime
 from services.graph_service import graph_service
+from services.data_mapping_service import initialize_data_mapping_service
 
 load_dotenv()
 
@@ -60,6 +61,10 @@ if graph_connected:
     print("Neo4j graph service initialized successfully")
 else:
     print("Neo4j graph service connection failed - continuing without graph features")
+
+# Initialize Data Mapping service
+data_mapping_service = initialize_data_mapping_service(DATABASE_URL)
+print("Data mapping service initialized successfully")
 
 
 # Pydantic models
@@ -576,6 +581,72 @@ async def search_nodes(q: str, node_types: Optional[str] = None):
         return {"query": q, "results": results, "count": len(results)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+# Data Mapping API Endpoints
+@app.get("/api/mapping/area/{area_id}/sensors")
+async def get_area_sensor_mapping(area_id: str):
+    """Get sensor configurations mapped to an asset area"""
+    try:
+        sensor_configs = data_mapping_service.get_sensor_configurations_by_area(area_id)
+        return {
+            "area_id": area_id,
+            "sensor_configurations": sensor_configs,
+            "count": len(sensor_configs)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get sensor mapping: {str(e)}")
+
+
+@app.get("/api/mapping/node/{node_type}/{node_name}")
+async def get_node_sensor_mapping(node_type: str, node_name: str):
+    """Get sensor data mapping for a specific graph node"""
+    try:
+        mapping = data_mapping_service.map_graph_node_to_sensor_data(node_name, node_type)
+        return mapping
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get node mapping: {str(e)}")
+
+
+@app.get("/api/mapping/enriched/{node_type}/{node_name}")
+async def get_enriched_node_context(node_type: str, node_name: str):
+    """Get enriched context combining graph relationships and sensor data"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        enriched_context = data_mapping_service.get_enriched_context_for_node(node_name, node_type)
+        return enriched_context
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get enriched context: {str(e)}")
+
+
+@app.get("/api/mapping/search/sensors")
+async def search_sensors(area_id: Optional[str] = None, sensor_type: Optional[str] = None, unit: Optional[str] = None):
+    """Search sensors by various criteria"""
+    try:
+        results = data_mapping_service.search_sensors_by_criteria(area_id, sensor_type, unit)
+        return {
+            "criteria": {
+                "area_id": area_id,
+                "sensor_type": sensor_type,
+                "unit": unit
+            },
+            "results": results,
+            "count": len(results)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sensor search failed: {str(e)}")
+
+
+@app.get("/api/mapping/area/{area_id}/quality")
+async def get_area_data_quality(area_id: str):
+    """Get data quality summary for an asset area"""
+    try:
+        quality_summary = data_mapping_service.get_data_quality_summary(area_id)
+        return quality_summary
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get data quality summary: {str(e)}")
 
 
 if __name__ == "__main__":
