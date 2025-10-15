@@ -25,6 +25,7 @@ class GraphService:
         self.uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
         self.username = os.getenv("NEO4J_USERNAME", "neo4j")
         self.password = os.getenv("NEO4J_PASSWORD", "password")
+        self.database = os.getenv("NEO4J_DATABASE", "neo4j")
         
     def connect(self) -> bool:
         """
@@ -91,7 +92,7 @@ class GraphService:
         
         results = []
         try:
-            with self.driver.session() as session:
+            with self.driver.session(database=self.database) as session:
                 result = session.run(query, parameters or {})
                 results = [record.data() for record in result]
                 
