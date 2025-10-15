@@ -455,6 +455,129 @@ async def import_status():
         return {"imports": [dict(imp._mapping) for imp in imports]}
 
 
+# Graph API Endpoints
+@app.get("/api/graph/plants")
+async def get_plants():
+    """Get all plants in the graph"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        plants = graph_service.get_all_plants()
+        return {"plants": plants}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get plants: {str(e)}")
+
+
+@app.get("/api/graph/plants/{plant_name}/areas")
+async def get_asset_areas_by_plant(plant_name: str):
+    """Get all asset areas for a specific plant"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        areas = graph_service.get_asset_areas_by_plant(plant_name)
+        return {"plant": plant_name, "asset_areas": areas}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get asset areas: {str(e)}")
+
+
+@app.get("/api/graph/areas/{area_name}/equipment")
+async def get_equipment_by_area(area_name: str):
+    """Get all equipment for a specific asset area"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        equipment = graph_service.get_equipment_by_asset_area(area_name)
+        return {"area": area_name, "equipment": equipment}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get equipment: {str(e)}")
+
+
+@app.get("/api/graph/areas/{area_name}/sensors")
+async def get_sensors_by_area(area_name: str):
+    """Get all sensors for a specific asset area"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        sensors = graph_service.get_sensors_by_asset_area(area_name)
+        return {"area": area_name, "sensors": sensors}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get sensors: {str(e)}")
+
+
+@app.get("/api/graph/equipment/{equipment_name}/sensors")
+async def get_sensors_by_equipment(equipment_name: str):
+    """Get all sensors for a specific equipment"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        sensors = graph_service.get_sensors_by_equipment(equipment_name)
+        return {"equipment": equipment_name, "sensors": sensors}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get sensors: {str(e)}")
+
+
+@app.get("/api/graph/nodes/{node_type}/{node_name}")
+async def get_node_details(node_type: str, node_name: str):
+    """Get detailed information about a specific node"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        # Get node details and relationships
+        node_details = graph_service.get_node_details(node_name)
+        if not node_details:
+            raise HTTPException(status_code=404, detail=f"Node {node_name} not found")
+        
+        relationships = graph_service.get_node_relationships(node_name, node_type)
+        
+        return {
+            "node": node_details,
+            "relationships": relationships,
+            "node_type": node_type
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get node details: {str(e)}")
+
+
+@app.get("/api/graph/context/{node_type}/{node_name}")
+async def get_contextual_subgraph(node_type: str, node_name: str, max_depth: int = 2):
+    """Get contextual subgraph for AI chat scoping"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        context = graph_service.get_contextual_subgraph(node_name, node_type, max_depth)
+        if not context.get("central_node"):
+            raise HTTPException(status_code=404, detail=f"Node {node_name} not found")
+        
+        return context
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get contextual subgraph: {str(e)}")
+
+
+@app.get("/api/graph/search")
+async def search_nodes(q: str, node_types: Optional[str] = None):
+    """Search nodes by name or description"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        types_list = node_types.split(',') if node_types else None
+        results = graph_service.search_nodes(q, types_list)
+        return {"query": q, "results": results, "count": len(results)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
