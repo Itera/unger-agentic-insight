@@ -42,7 +42,7 @@ Key principles:
 ### Epic 2: Graph-Based Navigation UI
 - [x] **US-004**: As a user, I want to see a plant overview with area cards so that I can choose which part of the facility to explore
 - [x] **US-005**: As a user, I want to click on any graph node and see its connected entities so that I can understand relationships
-- [ ] **US-006**: As a user, I want expandable detail views for nodes so that I can explore deeper without losing context
+- [x] **US-006**: As a user, I want expandable detail views for nodes so that I can explore deeper without losing context
 - [x] **US-007**: As a user, I want to see my current path/context so that I understand what scope I'm exploring
 - [x] **US-008**: As a user, I want to see orphaned sensors (area-connected but not equipment-specific) so that I can still access all available data
 

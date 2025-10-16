@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge, BarChart3, Settings, Database, Play, Box } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
+import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 
 const DetailContainer = styled.div`
   width: 100%;

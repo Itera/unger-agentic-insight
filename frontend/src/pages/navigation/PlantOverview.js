@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Factory, MapPin, Activity, AlertCircle, ChevronRight } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
+import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 
 const OverviewContainer = styled.div`
   width: 100%;
@@ -268,32 +269,16 @@ const PlantOverview = () => {
             </PlantTitle>
 
             <AreasGrid>
-              {(areas[plant.name] || []).map((area) => (
-                <AreaCard key={area.id || area.name} onClick={() => handleAreaClick(area)}>
-                  <AreaHeader>
-                    <div>
-                      <AreaTitle>{area.name}</AreaTitle>
-                      <AreaDescription>
-                        {area.description || `Asset area ${area.name} - Click to explore sensors and equipment`}
-                      </AreaDescription>
-                    </div>
-                    <AreaIcon>
-                      <MapPin size={20} />
-                    </AreaIcon>
-                  </AreaHeader>
-
-                  <AreaStats>
-                    <StatItem>
-                      <Activity size={16} />
-                      Active area
-                    </StatItem>
-                  </AreaStats>
-
-                  <ActionButton>
-                    <span>Explore area</span>
-                    <ChevronRight size={16} />
-                  </ActionButton>
-                </AreaCard>
+              {(areas[plant.name] || []).map((area, index) => (
+                <ExpandableEntityCard
+                  key={area.id || area.name || index}
+                  entity={{
+                    ...area,
+                    description: area.description || `Asset area ${area.name} - Click to explore sensors and equipment`
+                  }}
+                  entityType="AssetArea"
+                  onNavigate={(entity, type, id) => handleAreaClick(entity)}
+                />
               ))}
             </AreasGrid>
           </PlantSection>

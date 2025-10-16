@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge, BarChart3, Settings, Database, Play, Box } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
+import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 
 const DetailContainer = styled.div`
   width: 100%;
@@ -84,77 +85,7 @@ const EntitiesGrid = styled.div`
   gap: 1rem;
 `;
 
-const EntityCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 1rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-
-  &:hover {
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-  }
-`;
-
-const EntityHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-`;
-
-const EntityIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  color: white;
-  background: ${props => {
-    switch(props.type) {
-      case 'Equipment': return 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
-      case 'Sensor': return 'linear-gradient(135deg, #4ecdc4, #44a08d)';
-      case 'Equipment Sensors': return 'linear-gradient(135deg, #fd79a8, #e84393)'; // Pink gradient for equipment sensors
-      case 'Area Sensors': return 'linear-gradient(135deg, #fdcb6e, #e17055)'; // Orange gradient for area sensors
-      case 'Tank': return 'linear-gradient(135deg, #45b7d1, #2980b9)';
-      case 'ProcessStep': return 'linear-gradient(135deg, #96ceb4, #27ae60)';
-      default: return 'linear-gradient(135deg, #667eea, #764ba2)';
-    }
-  }};
-`;
-
-const EntityName = styled.h3`
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  margin: 0;
-  flex: 1;
-`;
-
-const EntityDescription = styled.p`
-  color: #666;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin: 0;
-`;
-
-const EntityMeta = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-`;
-
-const MetaTag = styled.span`
-  background: #e9ecef;
-  color: #495057;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-`;
+// Styled components for EntityCard removed - now using ExpandableEntityCard component
 
 const StatsContainer = styled.div`
   display: grid;
@@ -371,11 +302,8 @@ const AreaDetail = () => {
   const getEntityIcon = (type) => {
     switch (type) {
       case 'Equipment': return <Settings />;
-      case 'Sensor': return <Activity />;
-      case 'Equipment Sensors': return <Cpu />; // Different icon for equipment sensors
-      case 'Area Sensors': return <Zap />; // Different icon for area-only sensors
-      case 'Tank': return <Database />;
-      case 'ProcessStep': return <Play />;
+      case 'Equipment Sensors': return <Cpu />;
+      case 'Area Sensors': return <Zap />;
       default: return <Box />;
     }
   };
@@ -486,40 +414,13 @@ const AreaDetail = () => {
               </SectionHeader>
               
               <EntitiesGrid>
-                {entities.map((entity) => (
-                  <EntityCard 
-                    key={entity.id}
-                    onClick={() => handleEntityClick(entity, entityType)}
-                  >
-                    <EntityHeader>
-                      <EntityIcon type={entityType}>
-                        {getEntityIcon(entityType)}
-                      </EntityIcon>
-                      <EntityName>
-                        {entity.name || 
-                         entity.properties?.equipment_name || 
-                         entity.properties?.tag || 
-                         entity.properties?.name ||
-                         entity.description ||
-                         entity.id || 
-                         'Unknown'}
-                      </EntityName>
-                    </EntityHeader>
-                    
-                    {entity.description && (
-                      <EntityDescription>{entity.description}</EntityDescription>
-                    )}
-                    
-                    {entity.properties && (
-                      <EntityMeta>
-                        {Object.entries(entity.properties).map(([key, value]) => (
-                          <MetaTag key={key}>
-                            {key}: {value}
-                          </MetaTag>
-                        ))}
-                      </EntityMeta>
-                    )}
-                  </EntityCard>
+                {entities.map((entity, index) => (
+                  <ExpandableEntityCard
+                    key={entity.id || entity.properties?.tag || index}
+                    entity={entity}
+                    entityType={entityType}
+                    onNavigate={handleEntityClick}
+                  />
                 ))}
               </EntitiesGrid>
             </Section>
