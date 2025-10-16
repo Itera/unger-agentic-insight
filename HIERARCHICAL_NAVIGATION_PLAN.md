@@ -48,7 +48,7 @@ Key principles:
 
 ### Epic 3: Contextual AI Chat
 - [ ] **US-009**: As a user, I want the AI chat to be scoped to my current selection + connected nodes so that queries are more relevant and precise
-- [ ] **US-010**: As a user, I want to see what context the AI is using (both visually and textually) so that I understand the scope of responses
+- [x] **US-010**: As a user, I want to see what context the AI is using (both visually and textually) so that I understand the scope of responses
 - [ ] **US-011**: As a user, I want to toggle between scoped and global chat modes so that I can choose my query scope
 - [ ] **US-012**: As a user, I want the AI to understand graph relationships so that it can provide insights about connected entities
 - [ ] **US-013**: As a user, I want the AI to clearly indicate when it doesn't have data rather than making up answers

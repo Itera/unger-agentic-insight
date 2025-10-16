@@ -114,6 +114,7 @@ class QueryResponse(BaseModel):
     data: Optional[List[Dict[str, Any]]] = None
     source: str
     timestamp: datetime
+    context_used: Optional[Dict[str, Any]] = None  # Context data that was actually used
 
 
 class CSVImportResponse(BaseModel):
@@ -413,7 +414,8 @@ async def process_contextual_query(request: ContextualQueryRequest):
             response=agent_response,
             data=data,
             source=f"{'adx' if request.use_adx else 'local'}-contextual",
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
+            context_used=context_data  # Include the context that was actually used
         )
     
     except Exception as e:

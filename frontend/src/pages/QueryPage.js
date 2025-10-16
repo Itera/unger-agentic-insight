@@ -3,6 +3,7 @@ import axios from 'axios';
 import styled from 'styled-components';
 import { Send, Brain, Clock, Database, BarChart3, MapPin, Target } from 'lucide-react';
 import { useNavigationContext } from '../contexts/NavigationContext';
+import ContextVisualization from '../components/ContextVisualization';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const PageContainer = styled.div`
@@ -209,6 +210,29 @@ const QueryPage = () => {
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [useAdx, setUseAdx] = useState(false);
+  const [contextData, setContextData] = useState(null);
+
+  // Fetch context data when chat context changes
+  React.useEffect(() => {
+    const fetchContextData = async () => {
+      const chatContext = getChatContext();
+      if (chatMode === 'scoped' && chatContext && chatContext.nodeName) {
+        try {
+          const response = await axios.get(
+            `/api/graph/context/${chatContext.nodeType}/${encodeURIComponent(chatContext.nodeName)}`
+          );
+          setContextData(response.data);
+        } catch (error) {
+          console.error('Failed to fetch context data:', error);
+          setContextData(null);
+        }
+      } else {
+        setContextData(null);
+      }
+    };
+    
+    fetchContextData();
+  }, [getChatContext, chatMode]);
 
   const handleSubmit = async () => {
     if (!query.trim()) return;
@@ -315,6 +339,14 @@ const QueryPage = () => {
   return (
     <PageContainer>
       <Title>AI-Powered Industrial Insights</Title>
+      
+      {/* Context Visualization */}
+      <ContextVisualization 
+        context={getChatContext()}
+        contextData={contextData || (response?.context_used)}
+        mode={chatMode}
+        isVisible={true}
+      />
       
       <QuerySection>
         <InputContainer>
