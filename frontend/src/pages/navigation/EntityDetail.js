@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge,
 import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
+import WorkOrdersSection from '../../components/WorkOrdersSection';
 
 const DetailContainer = styled.div`
   width: 100%;
@@ -581,6 +582,18 @@ const EntityDetail = () => {
               No connected entities found for this {entityType.toLowerCase()}.
             </p>
           </Section>
+        )}
+        
+        {/* Work Orders Section - Show for sensors and some other entity types */}
+        {(entityType === 'Sensor' || entityType === 'Equipment Sensors' || entityType === 'Area Sensors') && (
+          <WorkOrdersSection 
+            entityType={entityType} 
+            entityName={entityData?.name || 
+                       entityData?.properties?.tag ||
+                       entityData?.properties?.name ||
+                       entityId}
+            areaName={areaName}
+          />
         )}
       </ContentContainer>
     </DetailContainer>

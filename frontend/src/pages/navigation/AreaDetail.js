@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge,
 import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
+import WorkOrdersSection from '../../components/WorkOrdersSection';
 
 const DetailContainer = styled.div`
   width: 100%;
@@ -442,6 +443,13 @@ const AreaDetail = () => {
             </p>
           </Section>
         )}
+        
+        {/* Work Orders Section */}
+        <WorkOrdersSection 
+          entityType="AssetArea" 
+          entityName={areaData?.name || decodeURIComponent(areaId)}
+          areaName={areaData?.name || decodeURIComponent(areaId)}
+        />
       </ContentContainer>
     </DetailContainer>
   );
