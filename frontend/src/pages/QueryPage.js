@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
-import { Send, Brain, Clock, Database, BarChart3, MapPin, Target, Eye, EyeOff } from 'lucide-react';
+import { Send, Brain, Clock, Database, BarChart3, MapPin, Target } from 'lucide-react';
 import { useNavigationContext } from '../contexts/NavigationContext';
 import ContextVisualization from '../components/ContextVisualization';
-import GraphVisualization from '../components/GraphVisualization';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const PageContainer = styled.div`
@@ -212,7 +211,6 @@ const QueryPage = () => {
   const [loading, setLoading] = useState(false);
   const [useAdx, setUseAdx] = useState(false);
   const [contextData, setContextData] = useState(null);
-  const [showGraphVisualization, setShowGraphVisualization] = useState(true);
 
   // Fetch context data when chat context changes
   React.useEffect(() => {
@@ -350,28 +348,6 @@ const QueryPage = () => {
         isVisible={true}
       />
       
-      {/* Graph Visualization */}
-      {showGraphVisualization && hasActiveContext && (
-        <ResponseSection style={{ marginBottom: '2rem' }}>
-          <ResponseHeader>
-            <BarChart3 size={24} color="#667eea" />
-            <div>
-              <h3 style={{ margin: 0, color: '#374151' }}>Graph Visualization</h3>
-              <div style={{ fontSize: '0.9rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                Interactive graph showing connections for {getContextSummary()}
-              </div>
-            </div>
-          </ResponseHeader>
-          <GraphVisualization 
-            width={1000}
-            height={500}
-            className="query-page-graph"
-            enableNavigation={true}
-            showLegend={true}
-          />
-        </ResponseSection>
-      )}
-      
       <QuerySection>
         <InputContainer>
           <QueryInput
@@ -426,18 +402,6 @@ Examples:
             />
             <ToggleLabel htmlFor="chatMode">
               Scoped Chat Mode
-            </ToggleLabel>
-          </ToggleContainer>
-          
-          <ToggleContainer>
-            <Toggle
-              type="checkbox"
-              id="showGraph"
-              checked={showGraphVisualization}
-              onChange={(e) => setShowGraphVisualization(e.target.checked)}
-            />
-            <ToggleLabel htmlFor="showGraph">
-              Show Graph Visualization
             </ToggleLabel>
           </ToggleContainer>
           
