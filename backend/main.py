@@ -496,8 +496,10 @@ Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({co
         if context_data.get('connected_nodes'):
             context_prompt += f"\nConnected Entities ({len(context_data['connected_nodes'])} found):\n"
             
-            # Group by relationship types and entity types
+            # Group by relationship types and entity types with rich properties
             entity_relationships = {}
+            detailed_entities = []
+            
             for node in context_data['connected_nodes'][:15]:  # Show more entities for better context
                 # Safely handle labels
                 labels = node.get('labels', [])
@@ -506,9 +508,15 @@ Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({co
                 else:
                     node_labels = 'Unknown'
                 
-                node_name = str(node.get('name', 'Unknown'))
+                # Enhanced node identification with proper names
+                node_name = str(node.get('name') or 
+                               node.get('properties', {}).get('equipment_name') or 
+                               node.get('properties', {}).get('tag') or 
+                               'Unknown')
+                
                 relationship_path = node.get('relationship_path', [])
                 depth = node.get('depth', 'unknown')
+                properties = node.get('properties', {})
                 
                 # Determine relationship context safely
                 if relationship_path and all(r is not None for r in relationship_path):
@@ -516,23 +524,80 @@ Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({co
                 else:
                     rel_context = f"at depth {str(depth)}"
                 
-                context_prompt += f"- {node_name} ({node_labels}) - {rel_context}\n"
+                # Enhanced entity description with rich properties
+                entity_desc = f"- {node_name} ({node_labels})"
+                
+                # Add sensor-specific properties
+                if 'Sensor' in node_labels:
+                    sensor_details = []
+                    if properties.get('unit'):
+                        sensor_details.append(f"Unit: {properties['unit']}")
+                    if properties.get('sensor_type_code'):
+                        sensor_details.append(f"Type: {properties['sensor_type_code']}")
+                    if properties.get('classification'):
+                        sensor_details.append(f"Class: {properties['classification']}")
+                    if sensor_details:
+                        entity_desc += f" [{', '.join(sensor_details)}]"
+                
+                # Add equipment-specific properties
+                elif 'Equipment' in node_labels:
+                    equip_details = []
+                    if properties.get('equipment_type'):
+                        equip_details.append(f"Type: {properties['equipment_type']}")
+                    if properties.get('sensor_count'):
+                        equip_details.append(f"Sensors: {properties['sensor_count']}")
+                    if equip_details:
+                        entity_desc += f" [{', '.join(equip_details)}]"
+                    
+                    # Add source tags if available
+                    if properties.get('source_tags'):
+                        source_tags = properties['source_tags'].split(',')[:3]  # Show first 3 tags
+                        entity_desc += f" [Tags: {', '.join([tag.strip() for tag in source_tags])}]"
+                
+                entity_desc += f" - {rel_context}"
+                detailed_entities.append(entity_desc)
                 
                 # Track relationship patterns for summary
                 primary_type = node_labels.split(',')[0].strip() if node_labels and node_labels != 'Unknown' else 'Unknown'
                 if primary_type not in entity_relationships:
                     entity_relationships[primary_type] = []
-                entity_relationships[primary_type].append(node_name)
+                entity_relationships[primary_type].append({
+                    'name': node_name,
+                    'properties': properties,
+                    'type': primary_type
+                })
+            
+            # Display detailed entities
+            for entity_desc in detailed_entities:
+                context_prompt += entity_desc + "\n"
             
             if len(context_data['connected_nodes']) > 15:
                 context_prompt += f"... and {len(context_data['connected_nodes']) - 15} more entities\n"
             
-            # Add relationship summary
+            # Add enhanced relationship summary with property insights
             context_prompt += "\n📊 RELATIONSHIP SUMMARY:\n"
             for entity_type, entities in entity_relationships.items():
-                context_prompt += f"- {len(entities)} {entity_type}(s): {', '.join(entities[:3])}"
+                entity_names = [e['name'] for e in entities]
+                context_prompt += f"- {len(entities)} {entity_type}(s): {', '.join(entity_names[:3])}"
                 if len(entities) > 3:
                     context_prompt += f" and {len(entities) - 3} more"
+                
+                # Add property summary for each type
+                if entity_type == 'Sensor':
+                    units = [e['properties'].get('unit') for e in entities if e['properties'].get('unit')]
+                    if units:
+                        unique_units = list(set(units))
+                        context_prompt += f" [Units: {', '.join(unique_units)}]"
+                elif entity_type == 'Equipment':
+                    types = [e['properties'].get('equipment_type') for e in entities if e['properties'].get('equipment_type')]
+                    if types:
+                        unique_types = list(set(types))
+                        context_prompt += f" [Types: {', '.join(unique_types)}]"
+                    
+                    total_sensor_count = sum([int(e['properties'].get('sensor_count', 0)) for e in entities if e['properties'].get('sensor_count')])
+                    if total_sensor_count > 0:
+                        context_prompt += f" [Total Connected Sensors: {total_sensor_count}]"
+                
                 context_prompt += "\n"
         
         context_prompt += f"\nTotal entities in scope: {context_data.get('total_nodes', 0)}\n"
@@ -542,36 +607,59 @@ Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({co
     
     base_prompt += f"""
 
-You can answer questions about:
-- HMI sensor data (timestamps, values, units, quality)
-- Tag configurations (descriptions, scan frequencies, limits) 
-- Itera measurements (various LI sensor readings)
-- Graph relationships between plants, areas, equipment, and sensors
+📊 **AVAILABLE DATA SOURCES**:
+- HMI sensor data (timestamps, values, quality) - Historical data available
+- Tag configurations (descriptions, scan frequencies, limits) - Configuration data
+- Itera measurements (various LI sensor readings) - Batch measurement data
+- Graph relationships (plants, areas, equipment, sensors) - Real-time topology
+- Sensor metadata (units like °C/%, sensor types like TI/LI, classifications)
+- Equipment details (types like tank/pump, sensor counts, source tag traceability)
 
-When answering queries:
-1. **PRIORITIZE CONTEXTUAL RELEVANCE**: Focus on the current navigation scope and connected entities
-2. **EXPLAIN RELATIONSHIPS**: When discussing entities, explain their relationships (e.g., "Sensor X is connected to Equipment Y in Area Z")
-3. **BE TRANSPARENT ABOUT DATA LIMITATIONS**: 
-   - If you don't have specific data, clearly state "I don't have data for [specific thing]" 
-   - Don't make up numbers, dates, or technical specifications
-   - If asked about real-time data or maintenance schedules, explain these would come from live systems
-4. **LEVERAGE GRAPH RELATIONSHIPS**: 
-   - Suggest related entities that might be relevant ("You might also want to check the connected sensors...")
-   - Explain how entities are interconnected in the plant hierarchy
-   - Identify potential impact relationships ("If this equipment fails, these sensors would be affected...")
-5. Provide clear, insightful analysis of available industrial data
-6. If a {query_language} query would be helpful, include it in your response between ```{query_language.lower()} and ``` tags
-7. Explain what the data shows in business/operational terms
-8. Highlight any anomalies, trends, or important insights
-9. Use appropriate industrial terminology
-10. **Reference specific entities from the current context when relevant**
+⚠️ **DATA LIMITATIONS** (US-019 - Be transparent about unavailable data):
+- ❌ **Real-time sensor values**: Historical data only, not live streaming
+- ❌ **Maintenance schedules**: Would require CMMS integration (not connected)
+- ❌ **Work orders & alerts**: Would require maintenance system integration
+- ❌ **Live alarms & diagnostics**: Would require SCADA/DCS integration
+- ❌ **Performance KPIs**: Would require calculation from live data streams
 
-🎯 **GOLDEN RULES**:
-- **ACCURACY OVER ASSUMPTIONS**: Better to say "I don't have that data" than guess
-- **RELATIONSHIP AWARENESS**: Use the connected entities to provide richer insights
-- **PRACTICAL FOCUS**: Always tie insights back to operational impact and maintenance needs
+🎯 **ENHANCED RESPONSE GUIDELINES** (US-017):
 
-Focus on providing actionable, accurate insights for plant operations and maintenance within the current scope."""
+1. **USE RICH GRAPH PROPERTIES**: Always include specific details when available
+   - Sensor responses: "Temperature sensor (Unit: °C, Type: TI, Class: PROCESS)"
+   - Equipment responses: "Cooling tank (Type: tank, 3 connected sensors: TI-006, LIC-008, etc.)"
+   - Include source tags for traceability: "Equipment monitored by tags: 7520LIC008.PIDA.OP, 7520LIC008.PIDA.SP"
+
+2. **EXPLAIN RELATIONSHIPS WITH CONTEXT**: Use the specific connected entities
+   - "This pump connects to 2 temperature sensors (°C) and 1 pressure sensor (%)"
+   - "In this area, you have 3 tanks with 8 total sensors across temperature and level monitoring"
+
+3. **PROVIDE INTELLIGENT SUGGESTIONS** (Foundation for US-018):
+   - "You might also want to check the connected temperature sensors for this equipment"
+   - "Related equipment in this area includes [list specific connected equipment]"
+   - "Based on this equipment type (tank), you typically want to monitor level and temperature sensors"
+
+4. **BE TRANSPARENT ABOUT LIMITATIONS** (US-019):
+   - "I can see this equipment has 3 sensors, but live readings would need real-time integration"
+   - "Maintenance schedules aren't available - this would come from your CMMS system"
+   - "Historical data shows patterns, but current status requires live SCADA connection"
+
+5. **LEVERAGE CONTEXTUAL SCOPE**: Focus on current navigation context
+   - Reference specific entities from the relationship summary above
+   - Use actual sensor units, equipment types, and counts from the context
+   - Connect answers to the specific plant hierarchy location
+
+6. **TECHNICAL ACCURACY**: 
+   - If a {query_language} query would help, include it in ```{query_language.lower()} tags
+   - Use proper industrial terminology based on sensor types and equipment types
+   - Reference actual tag names and sensor classifications when relevant
+
+🌟 **GOLDEN RULES** (Enhanced):
+- **RICH CONTEXT**: Use specific sensor units, equipment types, and connection details
+- **HONEST LIMITATIONS**: Clearly state when data isn't available vs. when integration is needed  
+- **PRACTICAL FOCUS**: Connect insights to operational impact using actual connected equipment
+- **INTELLIGENT SUGGESTIONS**: Recommend exploration of related entities from the graph
+
+Provide actionable insights for plant operations within the current scope, using all available rich metadata."""
     
     return base_prompt
 
