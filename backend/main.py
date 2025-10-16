@@ -1024,6 +1024,125 @@ async def get_area_data_quality(area_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get node details: {str(e)}")
 
 
+# Global Navigation API Endpoints
+@app.get("/api/navigation/all-equipment")
+async def get_all_equipment():
+    """Get all equipment across all plants and areas"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        equipment = graph_service.get_all_equipment()
+        
+        # Enhance with area context for each equipment
+        enhanced_equipment = []
+        for equip in equipment:
+            # Get area context for this equipment
+            area_query = """
+            MATCH (area:AssetArea)-[:CONTAINS]->(e:Equipment {name: $equipment_name})
+            RETURN area.name as area_name, area.id as area_id
+            """
+            area_results = graph_service.execute_query(area_query, {"equipment_name": equip["name"]})
+            
+            enhanced_equip = {**equip}
+            if area_results:
+                enhanced_equip["area_context"] = {
+                    "area_name": area_results[0]["area_name"],
+                    "area_id": area_results[0]["area_id"]
+                }
+            
+            enhanced_equipment.append(enhanced_equip)
+        
+        return {
+            "total_count": len(enhanced_equipment),
+            "equipment": serialize_neo4j_data(enhanced_equipment)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get all equipment: {str(e)}")
+
+
+@app.get("/api/navigation/all-sensors")
+async def get_all_sensors():
+    """Get all sensors across all plants and areas"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        sensors = graph_service.get_all_sensors()
+        
+        # Enhance with area and equipment context for each sensor
+        enhanced_sensors = []
+        for sensor in sensors:
+            # Get area and equipment context for this sensor
+            context_query = """
+            MATCH (s:Sensor {name: $sensor_name})
+            OPTIONAL MATCH (area:AssetArea)-[:HAS_SENSOR]->(s)
+            OPTIONAL MATCH (equip:Equipment)-[*1..2]->(s)
+            RETURN area.name as area_name, area.id as area_id,
+                   collect(DISTINCT equip.name) as connected_equipment
+            """
+            context_results = graph_service.execute_query(context_query, {"sensor_name": sensor["name"]})
+            
+            enhanced_sensor = {**sensor}
+            if context_results and context_results[0]:
+                result = context_results[0]
+                if result["area_name"]:
+                    enhanced_sensor["area_context"] = {
+                        "area_name": result["area_name"],
+                        "area_id": result["area_id"]
+                    }
+                if result["connected_equipment"] and len(result["connected_equipment"]) > 0:
+                    enhanced_sensor["equipment_context"] = result["connected_equipment"]
+            
+            enhanced_sensors.append(enhanced_sensor)
+        
+        return {
+            "total_count": len(enhanced_sensors),
+            "sensors": serialize_neo4j_data(enhanced_sensors)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get all sensors: {str(e)}")
+
+
+@app.get("/api/navigation/all-areas")
+async def get_all_areas():
+    """Get all asset areas across all plants"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        areas = graph_service.get_all_asset_areas()
+        
+        # Enhance with equipment and sensor counts for each area
+        enhanced_areas = []
+        for area in areas:
+            # Get counts for this area
+            counts_query = """
+            MATCH (area:AssetArea {name: $area_name})
+            OPTIONAL MATCH (area)-[:CONTAINS]->(equip:Equipment)
+            OPTIONAL MATCH (area)-[:HAS_SENSOR]->(sensor:Sensor)
+            RETURN count(DISTINCT equip) as equipment_count,
+                   count(DISTINCT sensor) as sensor_count
+            """
+            counts_results = graph_service.execute_query(counts_query, {"area_name": area["name"]})
+            
+            enhanced_area = {**area}
+            if counts_results:
+                enhanced_area["counts"] = {
+                    "equipment": counts_results[0]["equipment_count"],
+                    "sensors": counts_results[0]["sensor_count"]
+                }
+            
+            enhanced_areas.append(enhanced_area)
+        
+        return {
+            "total_count": len(enhanced_areas),
+            "areas": serialize_neo4j_data(enhanced_areas)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get all areas: {str(e)}")
+
+
 @app.get("/api/areas/{area_name}")
 async def get_area_details(area_name: str):
     """Get detailed information about a specific area"""

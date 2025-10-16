@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import PlantOverview from './PlantOverview';
 import AreaDetail from './AreaDetail';
 import EntityDetail from './EntityDetail';
+import GlobalNavigationTabs from './GlobalNavigationTabs';
 
 const NavigationContainer = styled.div`
   padding: 2rem;
@@ -16,6 +17,7 @@ const NavigationPage = () => {
     <NavigationContainer>
       <Routes>
         <Route path="/" element={<PlantOverview />} />
+        <Route path="/global" element={<GlobalNavigationTabs />} />
         <Route path="/area/:areaId" element={<AreaDetail />} />
         <Route path="/entity/:entityType/:entityId" element={<EntityDetail />} />
       </Routes>

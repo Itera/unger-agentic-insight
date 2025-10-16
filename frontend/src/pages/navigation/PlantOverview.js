@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { Factory, MapPin, Activity, AlertCircle, ChevronRight } from 'lucide-react';
+import { Factory, MapPin, Activity, AlertCircle, ChevronRight, Grid, List } from 'lucide-react';
 import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
@@ -13,6 +13,31 @@ const OverviewContainer = styled.div`
 const Header = styled.div`
   text-align: center;
   margin-bottom: 3rem;
+`;
+
+const NavigationToggle = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+`;
+
+const ToggleButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
 `;
 
 const Title = styled.h1`
@@ -253,11 +278,21 @@ const PlantOverview = () => {
       />
       
       <Header>
-        <Title>Factory Navigation</Title>
+        <Title>Navigation</Title>
         <Subtitle>
           Explore your industrial assets through an interactive plant and area overview
         </Subtitle>
       </Header>
+
+      <NavigationToggle>
+        <ToggleButton onClick={() => navigate('/navigate/global')}>
+          <Grid size={18} />
+          Switch to Global View
+          <span style={{ fontSize: '0.8rem', opacity: 0.8, marginLeft: '0.5rem' }}>
+            (View all equipment, sensors, areas)
+          </span>
+        </ToggleButton>
+      </NavigationToggle>
 
       <PlantsContainer>
         {plants.map((plant) => (
