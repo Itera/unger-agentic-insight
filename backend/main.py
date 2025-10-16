@@ -1257,32 +1257,14 @@ async def get_entity_connected_entities(entity_type: str, entity_id: str):
                         "relationship_type": result.get("rel_type")
                     })
             
-            if entity_groups:
-                return serialize_neo4j_data(entity_groups)
+            # Return the entity groups (empty if no connections exist)
+            return serialize_neo4j_data(entity_groups)
                 
     except Exception as e:
         print(f"Error getting connected entities from graph for {entity_type}/{entity_id}: {e}")
     
-    # Fallback to mock data
-    mock_connected = {
-        "Sensor": [
-            {
-                "id": "mock_sensor_1",
-                "name": f"Connected Sensor for {entity_id}",
-                "description": "Mock connected sensor",
-                "properties": {"value": "42.0", "unit": "°C"}
-            }
-        ],
-        "Equipment": [
-            {
-                "id": "mock_equipment_1", 
-                "name": f"Connected Equipment for {entity_id}",
-                "description": "Mock connected equipment",
-                "properties": {"status": "Running"}
-            }
-        ]
-    }
-    return mock_connected
+    # If graph service fails, return empty result instead of mock data
+    return {}
 
 
 if __name__ == "__main__":
