@@ -262,15 +262,31 @@ const ContextVisualization = ({
               {type} ({nodes.length})
             </div>
             <NodesList>
-              {nodes.slice(0, 6).map((node, index) => (
-                <NodeItem key={index}>
-                  <NodeIcon type={type}>
-                    {getNodeIcon(node.labels)}
-                  </NodeIcon>
-                  <NodeName>{node.name || 'Unnamed'}</NodeName>
-                  <NodeType>{type}</NodeType>
-                </NodeItem>
-              ))}
+              {nodes.slice(0, 6).map((node, index) => {
+                const getDisplayName = (node) => {
+                  return node.name || node.properties?.equipment_name || node.properties?.tag || 'Unnamed';
+                };
+                
+                const getDisplayInfo = (node) => {
+                  if (type === 'Sensor' && node.properties?.unit) {
+                    return `${type} (${node.properties.unit})`;
+                  }
+                  if (type === 'Equipment' && node.properties?.equipment_type) {
+                    return `${node.properties.equipment_type}`;
+                  }
+                  return type;
+                };
+                
+                return (
+                  <NodeItem key={index}>
+                    <NodeIcon type={type}>
+                      {getNodeIcon(node.labels)}
+                    </NodeIcon>
+                    <NodeName>{getDisplayName(node)}</NodeName>
+                    <NodeType>{getDisplayInfo(node)}</NodeType>
+                  </NodeItem>
+                );
+              })}
             </NodesList>
             {nodes.length > 6 && (
               <div style={{ 

@@ -229,9 +229,19 @@ const ExpandableEntityCard = ({ entity, entityType, onNavigate }) => {
   };
 
   const getEntityDescription = (entity) => {
-    return entity.description || 
-           entity.properties?.description || 
-           `${entityType} entity`;
+    let description = entity.description || entity.properties?.description;
+    
+    // Add unit information for sensors
+    if (entityType === 'Sensor' && entity.properties?.unit) {
+      description = `${description || 'Sensor'} (${entity.properties.unit})`;
+    }
+    
+    // Add equipment type for equipment
+    if (entityType === 'Equipment' && entity.properties?.equipment_type) {
+      description = `${description || 'Equipment'} - ${entity.properties.equipment_type}`;
+    }
+    
+    return description || `${entityType} entity`;
   };
 
   const formatPropertyValue = (value) => {
@@ -287,12 +297,77 @@ const ExpandableEntityCard = ({ entity, entityType, onNavigate }) => {
       
       {isExpanded && (
         <ExpandedContent isExpanded={isExpanded}>
-          {/* Entity Properties */}
+          {/* Key Information for Sensors and Equipment */}
+          {(entityType === 'Sensor' || entityType === 'Equipment') && entity.properties && (
+            <DetailSection>
+              <DetailSectionTitle>
+                <Activity size={14} />
+                Key Information
+              </DetailSectionTitle>
+              <PropertyGrid>
+                {/* Sensor-specific key info */}
+                {entityType === 'Sensor' && (
+                  <>
+                    {entity.properties.unit && (
+                      <PropertyItem>
+                        <PropertyLabel>Unit</PropertyLabel>
+                        <PropertyValue style={{fontWeight: 600, color: '#2563eb'}}>{entity.properties.unit}</PropertyValue>
+                      </PropertyItem>
+                    )}
+                    {entity.properties.sensor_type_code && (
+                      <PropertyItem>
+                        <PropertyLabel>Type</PropertyLabel>
+                        <PropertyValue>{entity.properties.sensor_type_code}</PropertyValue>
+                      </PropertyItem>
+                    )}
+                    {entity.properties.classification && (
+                      <PropertyItem>
+                        <PropertyLabel>Classification</PropertyLabel>
+                        <PropertyValue>{entity.properties.classification}</PropertyValue>
+                      </PropertyItem>
+                    )}
+                  </>
+                )}
+                {/* Equipment-specific key info */}
+                {entityType === 'Equipment' && (
+                  <>
+                    {entity.properties.equipment_type && (
+                      <PropertyItem>
+                        <PropertyLabel>Equipment Type</PropertyLabel>
+                        <PropertyValue style={{fontWeight: 600, color: '#dc2626'}}>{entity.properties.equipment_type}</PropertyValue>
+                      </PropertyItem>
+                    )}
+                    {entity.properties.sensor_count && (
+                      <PropertyItem>
+                        <PropertyLabel>Sensor Count</PropertyLabel>
+                        <PropertyValue style={{fontWeight: 600, color: '#059669'}}>{entity.properties.sensor_count}</PropertyValue>
+                      </PropertyItem>
+                    )}
+                  </>
+                )}
+              </PropertyGrid>
+              {/* Source tags for equipment */}
+              {entityType === 'Equipment' && entity.properties.source_tags && (
+                <div style={{marginTop: '0.75rem'}}>
+                  <PropertyLabel>Source Tags</PropertyLabel>
+                  <div style={{marginTop: '0.25rem'}}>
+                    {entity.properties.source_tags.split(',').map((tag, index) => (
+                      <MetaTag key={index} style={{marginRight: '0.5rem', marginBottom: '0.25rem'}}>
+                        {tag.trim()}
+                      </MetaTag>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </DetailSection>
+          )}
+          
+          {/* All Entity Properties */}
           {entity.properties && Object.keys(entity.properties).length > 0 && (
             <DetailSection>
               <DetailSectionTitle>
                 <Tag size={14} />
-                Properties
+                All Properties
               </DetailSectionTitle>
               <PropertyGrid>
                 {Object.entries(entity.properties).map(([key, value]) => (
