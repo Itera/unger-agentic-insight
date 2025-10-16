@@ -920,11 +920,28 @@ async def get_contextual_subgraph(node_type: str, node_name: str, max_depth: int
         if not context.get("central_node"):
             raise HTTPException(status_code=404, detail=f"Node {node_name} not found")
         
-        return context
+        return serialize_neo4j_data(context)
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get contextual subgraph: {str(e)}")
+
+
+@app.get("/api/suggestions/{node_type}/{node_name}")
+async def get_suggestions(node_type: str, node_name: str, max_suggestions: int = 6):
+    """Get smart suggestions for related entities based on graph connections (US-018)"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        suggestions = graph_service.get_smart_suggestions(node_name, node_type, max_suggestions)
+        return {
+            "node_name": node_name,
+            "node_type": node_type,
+            "suggestions": serialize_neo4j_data(suggestions)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get suggestions: {str(e)}")
 
 
 @app.get("/api/graph/search")

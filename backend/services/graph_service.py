@@ -421,6 +421,106 @@ class GraphService:
             "context_scope": f"{node_type}: {node_name}",
             "total_nodes": 1 + len(connected_nodes)
         }
+    
+    def get_smart_suggestions(self, node_name: str, node_type: str, max_suggestions: int = 6) -> List[Dict[str, Any]]:
+        """
+        Get smart suggestions for related entities based on graph connections (US-018)
+        
+        Args:
+            node_name: The current node name
+            node_type: The node type/label  
+            max_suggestions: Maximum number of suggestions to return
+            
+        Returns:
+            List of suggested entities with reasoning
+        """
+        suggestions = []
+        
+        # Strategy 1: Suggest connected equipment if viewing an area
+        if node_type == 'AssetArea':
+            query = """
+            MATCH (area:AssetArea {name: $node_name})-[:CONTAINS]->(equip:Equipment)
+            WITH equip
+            RETURN DISTINCT equip.name as name, 
+                   labels(equip) as labels,
+                   properties(equip) as properties,
+                   'Connected equipment in this area' as reason,
+                   'Equipment' as suggestion_type,
+                   1 as priority
+            ORDER BY equip.properties.equipment_type, equip.name
+            LIMIT $max_suggestions
+            """
+            equipment_suggestions = self.execute_query(query, {
+                "node_name": node_name, 
+                "max_suggestions": max_suggestions // 2
+            })
+            suggestions.extend(equipment_suggestions)
+        
+        # Strategy 2: Suggest connected sensors for equipment  
+        if node_type == 'Equipment':
+            query = """
+            MATCH (equip:Equipment {name: $node_name})-[r*1..2]->(sensor:Sensor)
+            WITH DISTINCT sensor
+            RETURN sensor.name as name,
+                   labels(sensor) as labels, 
+                   properties(sensor) as properties,
+                   'Sensor connected to this equipment' as reason,
+                   'Sensor' as suggestion_type,
+                   1 as priority
+            ORDER BY sensor.properties.sensor_type_code, sensor.properties.tag
+            LIMIT $max_suggestions
+            """
+            sensor_suggestions = self.execute_query(query, {
+                "node_name": node_name,
+                "max_suggestions": max_suggestions
+            })
+            suggestions.extend(sensor_suggestions)
+        
+        # Strategy 3: Suggest related areas (same plant)
+        if node_type == 'AssetArea':
+            query = """
+            MATCH (current:AssetArea {name: $node_name})<-[:CONTAINS]-(plant:Plant)
+            MATCH (plant)-[:CONTAINS]->(other:AssetArea)
+            WHERE other.name <> $node_name
+            WITH DISTINCT other, plant
+            RETURN other.name as name,
+                   labels(other) as labels,
+                   properties(other) as properties, 
+                   'Other area in ' + plant.name as reason,
+                   'AssetArea' as suggestion_type,
+                   2 as priority
+            ORDER BY other.name
+            LIMIT $max_suggestions
+            """
+            related_areas = self.execute_query(query, {
+                "node_name": node_name,
+                "max_suggestions": max_suggestions // 3
+            })
+            suggestions.extend(related_areas)
+        
+        # Strategy 4: Suggest equipment in same area for sensors
+        if node_type == 'Sensor':
+            query = """
+            MATCH (sensor:Sensor {name: $node_name})<-[*1..3]-(area:AssetArea)
+            MATCH (area)-[:CONTAINS]->(equip:Equipment)
+            RETURN DISTINCT equip.name as name,
+                   labels(equip) as labels,
+                   properties(equip) as properties,
+                   'Equipment in same area' as reason,
+                   'Equipment' as suggestion_type,
+                   2 as priority
+            ORDER BY equip.properties.equipment_type, equip.name 
+            LIMIT $max_suggestions
+            """
+            equipment_in_area = self.execute_query(query, {
+                "node_name": node_name,
+                "max_suggestions": max_suggestions
+            })
+            suggestions.extend(equipment_in_area)
+        
+        # Sort by priority and limit results
+        suggestions.sort(key=lambda x: x.get('priority', 3))
+        return suggestions[:max_suggestions]
 
 
 # Global instance
