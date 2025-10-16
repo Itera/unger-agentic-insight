@@ -343,7 +343,7 @@ async def process_query(request: QueryRequest):
         
         # Query OpenAI agent
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": request.query}
@@ -392,7 +392,7 @@ async def process_contextual_query(request: ContextualQueryRequest):
         
         # Query OpenAI agent with context
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": request.query}
@@ -415,7 +415,7 @@ async def process_contextual_query(request: ContextualQueryRequest):
             data=data,
             source=f"{'adx' if request.use_adx else 'local'}-contextual",
             timestamp=datetime.now(),
-            context_used=context_data  # Include the context that was actually used
+            context_used=serialize_neo4j_data(context_data) if context_data else None  # Serialize context data
         )
     
     except Exception as e:
@@ -499,21 +499,27 @@ Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({co
             # Group by relationship types and entity types
             entity_relationships = {}
             for node in context_data['connected_nodes'][:15]:  # Show more entities for better context
-                node_labels = ', '.join(node.get('labels', []))
-                node_name = node.get('name', 'Unknown')
+                # Safely handle labels
+                labels = node.get('labels', [])
+                if labels and all(label is not None for label in labels):
+                    node_labels = ', '.join(str(label) for label in labels)
+                else:
+                    node_labels = 'Unknown'
+                
+                node_name = str(node.get('name', 'Unknown'))
                 relationship_path = node.get('relationship_path', [])
                 depth = node.get('depth', 'unknown')
                 
-                # Determine relationship context
-                if relationship_path:
-                    rel_context = f"via {' → '.join(relationship_path)}"
+                # Determine relationship context safely
+                if relationship_path and all(r is not None for r in relationship_path):
+                    rel_context = f"via {' → '.join(str(r) for r in relationship_path)}"
                 else:
-                    rel_context = f"at depth {depth}"
+                    rel_context = f"at depth {str(depth)}"
                 
                 context_prompt += f"- {node_name} ({node_labels}) - {rel_context}\n"
                 
                 # Track relationship patterns for summary
-                primary_type = node_labels.split(',')[0].strip() if node_labels else 'Unknown'
+                primary_type = node_labels.split(',')[0].strip() if node_labels and node_labels != 'Unknown' else 'Unknown'
                 if primary_type not in entity_relationships:
                     entity_relationships[primary_type] = []
                 entity_relationships[primary_type].append(node_name)
