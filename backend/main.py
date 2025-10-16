@@ -69,6 +69,21 @@ data_mapping_service = initialize_data_mapping_service(DATABASE_URL)
 print("Data mapping service initialized successfully")
 
 
+# Helper function to map UI entity types to Neo4j labels
+def map_entity_type_to_neo4j_label(entity_type: str) -> str:
+    """Map frontend entity types to actual Neo4j node labels"""
+    type_mapping = {
+        "Area Sensors": "Sensor",
+        "Equipment Sensors": "Sensor", 
+        "Equipment": "Equipment",
+        "Sensor": "Sensor",
+        "AssetArea": "AssetArea",
+        "Tank": "Tank",
+        "ProcessStep": "ProcessStep"
+    }
+    return type_mapping.get(entity_type, entity_type)
+
+
 # Helper function to serialize Neo4j data
 def serialize_neo4j_data(data):
     """Convert Neo4j data types to JSON-serializable formats"""
@@ -1175,10 +1190,13 @@ async def get_entity_details(entity_type: str, entity_id: str):
     """Get detailed information about a specific entity"""
     try:
         if graph_service.is_connected():
+            # Map UI entity types to Neo4j labels
+            neo4j_label = map_entity_type_to_neo4j_label(entity_type)
+            
             # Try to get real entity data from Neo4j
             # First try by ID, then by name if ID doesn't work
             query = f"""
-            MATCH (e:{entity_type})
+            MATCH (e:{neo4j_label})
             WHERE e.id = $entity_id OR e.name = $entity_id OR e.equipment_id = $entity_id OR e.tag = $entity_id
             RETURN e.id as id, e.name as name, e.description as description,
                    labels(e) as labels, properties(e) as properties
@@ -1222,9 +1240,12 @@ async def get_entity_connected_entities(entity_type: str, entity_id: str):
     
     try:
         if graph_service.is_connected():
+            # Map UI entity types to Neo4j labels
+            neo4j_label = map_entity_type_to_neo4j_label(entity_type)
+            
             # Get connected entities from Neo4j
             query = f"""
-            MATCH (e:{entity_type})-[r]-(connected)
+            MATCH (e:{neo4j_label})-[r]-(connected)
             WHERE e.id = $entity_id OR e.name = $entity_id OR e.equipment_id = $entity_id OR e.tag = $entity_id
             WITH connected, type(r) as rel_type, labels(connected) as connected_labels
             RETURN connected.id as id, connected.name as name, connected.description as description,
