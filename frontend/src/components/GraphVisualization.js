@@ -22,6 +22,7 @@ const GraphVisualization = ({
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [useSimpleRendering, setUseSimpleRendering] = useState(false);
   const fgRef = useRef();
 
   // Node type configurations for styling and behavior
@@ -181,46 +182,67 @@ const GraphVisualization = ({
 
   // Custom node rendering with icons and labels
   const nodeCanvasObject = useCallback((node, ctx, globalScale) => {
-    const label = node.name;
-    const config = nodeConfig[node.type] || nodeConfig.Sensor;
-    const size = getNodeSize(node);
-    
-    // Draw node circle
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
-    ctx.fillStyle = getNodeColor(node);
-    ctx.fill();
-
-    // Draw border
-    ctx.strokeStyle = config.strokeColor;
-    ctx.lineWidth = config.strokeWidth / globalScale;
-    if (node.type === 'OrphanedSensor') {
-      ctx.setLineDash([3, 3]);
-    } else {
-      ctx.setLineDash([]);
-    }
-    ctx.stroke();
-
-    // Draw label
-    if (globalScale > 0.5) {
-      const fontSize = Math.max(8, 12 / globalScale);
-      ctx.font = `${fontSize}px Sans-Serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#374151';
-      ctx.fillText(label, node.x, node.y + size + fontSize);
+    // Safety check for canvas context
+    if (!ctx || typeof ctx.beginPath !== 'function') {
+      console.warn('Invalid canvas context provided to nodeCanvasObject');
+      return;
     }
 
-    // Draw central node indicator
-    if (node.isCentral && globalScale > 0.3) {
+    // Safety check for node coordinates
+    if (typeof node.x !== 'number' || typeof node.y !== 'number') {
+      console.warn('Invalid node coordinates:', node);
+      return;
+    }
+
+    try {
+      const label = node.name || 'Unknown';
+      const config = nodeConfig[node.type] || nodeConfig.Sensor;
+      const size = getNodeSize(node);
+      
+      // Draw node circle
       ctx.beginPath();
-      ctx.arc(node.x, node.y, size + 3, 0, 2 * Math.PI, false);
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 2 / globalScale;
-      ctx.setLineDash([2, 2]);
+      ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+      ctx.fillStyle = getNodeColor(node);
+      ctx.fill();
+
+      // Draw border
+      ctx.strokeStyle = config.strokeColor;
+      ctx.lineWidth = config.strokeWidth / globalScale;
+      if (node.type === 'OrphanedSensor') {
+        ctx.setLineDash([3, 3]);
+      } else {
+        ctx.setLineDash([]);
+      }
       ctx.stroke();
+
+      // Draw label
+      if (globalScale > 0.5 && label) {
+        const fontSize = Math.max(8, 12 / globalScale);
+        ctx.font = `${fontSize}px Sans-Serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#374151';
+        ctx.fillText(label, node.x, node.y + size + fontSize);
+      }
+
+      // Draw central node indicator
+      if (node.isCentral && globalScale > 0.3) {
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, size + 3, 0, 2 * Math.PI, false);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2 / globalScale;
+        ctx.setLineDash([2, 2]);
+        ctx.stroke();
+      }
+    } catch (error) {
+      console.error('Error in nodeCanvasObject:', error);
+      // Switch to simple rendering on repeated canvas errors
+      if (!useSimpleRendering) {
+        console.warn('Switching to simple rendering mode due to canvas errors');
+        setUseSimpleRendering(true);
+      }
     }
-  }, [nodeConfig, getNodeColor, getNodeSize]);
+  }, [nodeConfig, getNodeColor, getNodeSize, useSimpleRendering]);
 
   // Link styling
   const getLinkColor = useCallback((link) => {
@@ -323,6 +345,9 @@ const GraphVisualization = ({
         <div className="graph-stats">
           <span>{graphData.nodes.length} nodes</span>
           <span>{graphData.links.length} connections</span>
+          {useSimpleRendering && (
+            <span style={{ backgroundColor: '#fbbf24', color: '#92400e' }}>Simple Mode</span>
+          )}
         </div>
       </div>
       
@@ -332,11 +357,14 @@ const GraphVisualization = ({
           graphData={graphData}
           width={width}
           height={height}
-          nodeCanvasObject={nodeCanvasObject}
-          nodePointerAreaPaint={nodeCanvasObject}
+          nodeCanvasObject={useSimpleRendering ? undefined : nodeCanvasObject}
+          nodePointerAreaPaint={useSimpleRendering ? undefined : nodeCanvasObject}
+          nodeColor={useSimpleRendering ? getNodeColor : undefined}
+          nodeVal={useSimpleRendering ? getNodeSize : undefined}
+          nodeLabel={useSimpleRendering ? (node => node.name) : undefined}
           onNodeClick={handleNodeClick}
           linkColor={getLinkColor}
-          linkDirectionalParticles={2}
+          linkDirectionalParticles={useSimpleRendering ? 0 : 2}
           linkDirectionalParticleSpeed={0.006}
           linkDirectionalParticleWidth={1}
           cooldownTicks={100}
