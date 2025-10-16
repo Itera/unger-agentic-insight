@@ -1,0 +1,174 @@
+.graph-visualization {
+  @apply bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden;
+}
+
+.graph-visualization.error,
+.graph-visualization.loading,
+.graph-visualization.empty {
+  @apply flex items-center justify-center min-h-96;
+}
+
+/* Header */
+.graph-header {
+  @apply flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200;
+}
+
+.graph-header h3 {
+  @apply text-lg font-semibold text-gray-800;
+}
+
+.graph-stats {
+  @apply flex gap-4 text-sm text-gray-600;
+}
+
+.graph-stats span {
+  @apply bg-white px-2 py-1 rounded border border-gray-200;
+}
+
+/* Graph Container */
+.graph-container {
+  @apply relative;
+}
+
+.graph-container canvas {
+  @apply border-b border-gray-100;
+}
+
+/* Legend */
+.graph-legend {
+  @apply absolute top-4 right-4 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-3 shadow-lg;
+  min-width: 150px;
+}
+
+.graph-legend h4 {
+  @apply text-sm font-semibold text-gray-700 mb-2 border-b border-gray-200 pb-1;
+}
+
+.legend-item {
+  @apply flex items-center gap-2 mb-1.5;
+}
+
+.legend-item:last-child {
+  @apply mb-0;
+}
+
+.legend-dot {
+  @apply w-3 h-3 rounded-full flex-shrink-0;
+}
+
+.legend-dot.central-indicator {
+  @apply bg-red-500 border-2 border-red-600;
+  border-style: dashed !important;
+}
+
+.legend-item span {
+  @apply text-xs text-gray-700;
+}
+
+/* Footer */
+.graph-footer {
+  @apply p-3 bg-gray-50 border-t border-gray-200;
+}
+
+.graph-hint {
+  @apply text-sm text-gray-600 text-center;
+}
+
+/* Loading State */
+.loading-spinner {
+  @apply flex flex-col items-center gap-4;
+}
+
+.spinner {
+  @apply w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin;
+}
+
+.loading-spinner p {
+  @apply text-gray-600;
+}
+
+/* Error State */
+.error-message {
+  @apply text-center max-w-md;
+}
+
+.error-message h4 {
+  @apply text-red-600 font-semibold mb-2;
+}
+
+.error-message p {
+  @apply text-gray-600 mb-4;
+}
+
+.retry-button {
+  @apply px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors;
+}
+
+/* Empty State */
+.empty-state {
+  @apply text-center max-w-md;
+}
+
+.empty-state h4 {
+  @apply text-gray-700 font-semibold mb-2;
+}
+
+.empty-state p {
+  @apply text-gray-500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .graph-header {
+    @apply flex-col gap-2 items-start;
+  }
+  
+  .graph-stats {
+    @apply flex-wrap gap-2;
+  }
+  
+  .graph-legend {
+    @apply relative top-0 right-0 mt-4 mx-4 bg-gray-50;
+  }
+}
+
+/* Animation for graph appearance */
+.graph-visualization {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover effects for interactive elements */
+.graph-visualization canvas {
+  cursor: crosshair;
+}
+
+.graph-visualization canvas:hover {
+  cursor: pointer;
+}
+
+/* Focus indicators for accessibility */
+.retry-button:focus {
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .graph-legend {
+    @apply bg-white border-gray-400;
+  }
+  
+  .legend-dot {
+    @apply border-2 border-gray-800;
+  }
+}
