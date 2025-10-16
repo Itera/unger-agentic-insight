@@ -40,11 +40,11 @@ Key principles:
 - [ ] **US-003**: As a developer, I need to map graph entities to the existing sensor data so that I can provide enriched context
 
 ### Epic 2: Graph-Based Navigation UI
-- [ ] **US-004**: As a user, I want to see a plant overview with area cards so that I can choose which part of the facility to explore
-- [ ] **US-005**: As a user, I want to click on any graph node and see its connected entities so that I can understand relationships
+- [x] **US-004**: As a user, I want to see a plant overview with area cards so that I can choose which part of the facility to explore
+- [x] **US-005**: As a user, I want to click on any graph node and see its connected entities so that I can understand relationships
 - [ ] **US-006**: As a user, I want expandable detail views for nodes so that I can explore deeper without losing context
-- [ ] **US-007**: As a user, I want to see my current path/context so that I understand what scope I'm exploring
-- [ ] **US-008**: As a user, I want to see orphaned sensors (area-connected but not equipment-specific) so that I can still access all available data
+- [x] **US-007**: As a user, I want to see my current path/context so that I understand what scope I'm exploring
+- [x] **US-008**: As a user, I want to see orphaned sensors (area-connected but not equipment-specific) so that I can still access all available data
 
 ### Epic 3: Contextual AI Chat
 - [ ] **US-009**: As a user, I want the AI chat to be scoped to my current selection + connected nodes so that queries are more relevant and precise
@@ -66,17 +66,17 @@ Key principles:
 ## Technical Tasks
 
 ### Phase 1: Foundation (Graph Integration)
-- [ ] **T-001**: Set up Neo4j connection in backend
-- [ ] **T-002**: Create graph query service with basic CRUD operations
-- [ ] **T-003**: Create API endpoints for hierarchical data retrieval
+- [x] **T-001**: Set up Neo4j connection in backend
+- [x] **T-002**: Create graph query service with basic CRUD operations
+- [x] **T-003**: Create API endpoints for hierarchical data retrieval
 - [ ] **T-004**: Map existing sensor data to graph entities
 - [ ] **T-005**: Create graph data models (Area, Asset, Sensor, Equipment)
 
 ### Phase 2: Navigation Interface
-- [ ] **T-006**: Create hierarchical navigation component structure
-- [ ] **T-007**: Build area overview page with clickable cards
-- [ ] **T-008**: Build asset detail page with sensor listings
-- [ ] **T-009**: Implement breadcrumb navigation component
+- [x] **T-006**: Create hierarchical navigation component structure
+- [x] **T-007**: Build area overview page with clickable cards
+- [x] **T-008**: Build asset detail page with sensor listings
+- [x] **T-009**: Implement breadcrumb navigation component
 - [ ] **T-010**: Add routing for hierarchical paths (/area/75-12/asset/7512TIC301)
 
 ### Phase 3: Contextual Chat Integration

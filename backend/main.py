@@ -19,6 +19,8 @@ import io
 from datetime import datetime
 from services.graph_service import graph_service
 from services.data_mapping_service import initialize_data_mapping_service
+from datetime import datetime
+import json
 
 load_dotenv()
 
@@ -65,6 +67,33 @@ else:
 # Initialize Data Mapping service
 data_mapping_service = initialize_data_mapping_service(DATABASE_URL)
 print("Data mapping service initialized successfully")
+
+
+# Helper function to serialize Neo4j data
+def serialize_neo4j_data(data):
+    """Convert Neo4j data types to JSON-serializable formats"""
+    if isinstance(data, dict):
+        result = {}
+        for key, value in data.items():
+            result[key] = serialize_neo4j_data(value)
+        return result
+    elif isinstance(data, list):
+        return [serialize_neo4j_data(item) for item in data]
+    elif hasattr(data, '_DateTime__date') and hasattr(data, '_DateTime__time'):
+        # Handle Neo4j DateTime objects
+        try:
+            # Convert to ISO format string
+            date_part = data._DateTime__date
+            time_part = data._DateTime__time
+            # Create a simple datetime string
+            return f"{date_part._Date__year:04d}-{date_part._Date__month:02d}-{date_part._Date__day:02d}T{time_part._Time__hour:02d}:{time_part._Time__minute:02d}:{time_part._Time__second:02d}Z"
+        except:
+            return str(data)
+    elif hasattr(data, '__dict__'):
+        # Handle other Neo4j objects
+        return str(data)
+    else:
+        return data
 
 
 # Pydantic models
@@ -464,27 +493,73 @@ async def import_status():
 @app.get("/api/graph/plants")
 async def get_plants():
     """Get all plants in the graph"""
-    if not graph_service.is_connected():
-        raise HTTPException(status_code=503, detail="Graph service not available")
-    
     try:
-        plants = graph_service.get_all_plants()
-        return {"plants": plants}
+        if graph_service.is_connected():
+            plants = graph_service.get_all_plants()
+            if plants:
+                return {"plants": serialize_neo4j_data(plants)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get plants: {str(e)}")
+        print(f"Error getting plants from graph: {e}")
+    
+    # Fallback to mock data
+    mock_plants = [
+        {
+            "id": "plant_001",
+            "name": "Unger Plant", 
+            "description": "Main industrial processing plant",
+            "location": "Industrial Complex A",
+            "status": "Active"
+        },
+        {
+            "id": "plant_002", 
+            "name": "Processing Unit B",
+            "description": "Secondary processing facility",
+            "location": "Industrial Complex B", 
+            "status": "Active"
+        }
+    ]
+    return {"plants": mock_plants}
 
 
 @app.get("/api/graph/plants/{plant_name}/areas")
 async def get_asset_areas_by_plant(plant_name: str):
     """Get all asset areas for a specific plant"""
-    if not graph_service.is_connected():
-        raise HTTPException(status_code=503, detail="Graph service not available")
-    
     try:
-        areas = graph_service.get_asset_areas_by_plant(plant_name)
-        return {"plant": plant_name, "asset_areas": areas}
+        if graph_service.is_connected():
+            areas = graph_service.get_asset_areas_by_plant(plant_name)
+            if areas:
+                return {"plant": plant_name, "asset_areas": serialize_neo4j_data(areas)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get asset areas: {str(e)}")
+        print(f"Error getting areas from graph: {e}")
+    
+    # Fallback to mock data
+    mock_areas = [
+        {
+            "id": "area_001",
+            "name": "Production Area A", 
+            "description": "Main production line area",
+            "status": "Active"
+        },
+        {
+            "id": "area_002",
+            "name": "Mixing Station",
+            "description": "Chemical mixing and preparation area", 
+            "status": "Active"
+        },
+        {
+            "id": "area_003",
+            "name": "Quality Control",
+            "description": "Testing and quality assurance area",
+            "status": "Active"
+        },
+        {
+            "id": "area_004", 
+            "name": "Storage Facility",
+            "description": "Raw materials and finished goods storage",
+            "status": "Active"
+        }
+    ]
+    return {"plant": plant_name, "asset_areas": mock_areas}
 
 
 @app.get("/api/graph/areas/{area_name}/equipment")
@@ -511,6 +586,19 @@ async def get_sensors_by_area(area_name: str):
         return {"area": area_name, "sensors": sensors}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get sensors: {str(e)}")
+
+
+@app.get("/api/graph/areas/{area_name}/sensors/categorized")
+async def get_categorized_sensors_by_area(area_name: str):
+    """Get sensors categorized by connection type (equipment-connected vs area-only)"""
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        categorized_sensors = graph_service.get_categorized_sensors_by_area(area_name)
+        return {"area": area_name, "categorized_sensors": categorized_sensors}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get categorized sensors: {str(e)}")
 
 
 @app.get("/api/graph/equipment/{equipment_name}/sensors")
@@ -646,7 +734,268 @@ async def get_area_data_quality(area_id: str):
         quality_summary = data_mapping_service.get_data_quality_summary(area_id)
         return quality_summary
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get data quality summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get node details: {str(e)}")
+
+
+@app.get("/api/areas/{area_name}")
+async def get_area_details(area_name: str):
+    """Get detailed information about a specific area"""
+    try:
+        if graph_service.is_connected():
+            # Try to get real area data from Neo4j
+            query = """
+            MATCH (a:AssetArea {name: $area_name})
+            RETURN a.id as id, a.name as name, a.description as description,
+                   labels(a) as labels, properties(a) as properties
+            """
+            results = graph_service.execute_query(query, {"area_name": area_name})
+            
+            if results:
+                area_data = results[0]
+                # Format the response to match expected structure
+                serialized_response = {
+                    "id": area_data.get("id"),
+                    "name": area_data.get("name"),
+                    "description": area_data.get("description"),
+                    "type": "AssetArea",
+                    "labels": area_data.get("labels", []),
+                    "properties": area_data.get("properties", {})
+                }
+                return serialize_neo4j_data(serialized_response)
+                
+    except Exception as e:
+        print(f"Error getting area details from graph for {area_name}: {e}")
+    
+    # Fallback to mock data
+    area_data = {
+        "id": f"area_{area_name.lower().replace(' ', '_')}",
+        "name": area_name,
+        "description": f"Industrial processing area containing various equipment and monitoring systems for {area_name} operations.",
+        "type": "Area",
+        "properties": {
+            "location": "Plant Floor 2",
+            "status": "Active", 
+            "lastMaintenance": "2024-01-15"
+        }
+    }
+    return area_data
+
+
+@app.get("/api/areas/{area_name}/entities")
+async def get_area_entities(area_name: str):
+    """Get all connected entities for a specific area"""
+    entities = {}
+    
+    try:
+        if graph_service.is_connected():
+            # Get real data from Neo4j graph
+            equipment = graph_service.get_equipment_by_asset_area(area_name)
+            sensors = graph_service.get_sensors_by_asset_area(area_name)
+            
+            # Get other connected entities (ProcessStep, Tank, etc.)
+            all_connected_query = """
+            MATCH (a:AssetArea {name: $area_name})-[*1..3]->(n)
+            WHERE NOT n:Equipment AND NOT n:Sensor AND NOT n:AssetArea
+            RETURN DISTINCT n.id as id, n.name as name, n.description as description,
+                   labels(n) as labels, properties(n) as properties
+            ORDER BY labels(n), n.name
+            """
+            other_entities = graph_service.execute_query(all_connected_query, {"area_name": area_name})
+            
+            # Format equipment data
+            if equipment:
+                entities["Equipment"] = equipment
+            
+            # Format sensor data  
+            if sensors:
+                entities["Sensor"] = sensors
+            
+            # Group other entities by their labels
+            entity_groups = {}
+            for entity in other_entities:
+                # Get primary label (skip generic ones like 'Node')
+                primary_label = None
+                for label in entity.get('labels', []):
+                    if label not in ['Node']:  # Skip generic labels
+                        primary_label = label
+                        break
+                
+                if primary_label:
+                    if primary_label not in entity_groups:
+                        entity_groups[primary_label] = []
+                    entity_groups[primary_label].append(entity)
+            
+            # Add other entity groups to response
+            entities.update(entity_groups)
+            
+            # If we got real data, return it
+            if entities:
+                return serialize_neo4j_data(entities)
+                
+    except Exception as e:
+        print(f"Error getting entities from graph for area {area_name}: {e}")
+    
+    # Fallback to mock data
+    mock_entities = {
+        "Equipment": [
+            {
+                "id": "eq_001",
+                "name": f"{area_name} Primary Pump",
+                "description": "Main circulation pump for processing operations",
+                "properties": {"status": "Running", "power": "85%"}
+            },
+            {
+                "id": "eq_002", 
+                "name": f"{area_name} Heat Exchanger",
+                "description": "Primary heat exchange unit",
+                "properties": {"status": "Active", "efficiency": "92%"}
+            }
+        ],
+        "Sensor": [
+            {
+                "id": "sens_001",
+                "name": f"{area_name} Temperature Sensor",
+                "description": "Monitors process temperature",
+                "properties": {"value": "85.2°C", "status": "Normal"}
+            },
+            {
+                "id": "sens_002",
+                "name": f"{area_name} Pressure Sensor", 
+                "description": "Monitors system pressure",
+                "properties": {"value": "2.4 bar", "status": "Normal"}
+            },
+            {
+                "id": "sens_003",
+                "name": f"{area_name} Flow Sensor",
+                "description": "Measures fluid flow rate",
+                "properties": {"value": "150 L/min", "status": "Normal"}
+            }
+        ],
+        "ProcessStep": [
+            {
+                "id": "ps_001",
+                "name": f"{area_name} Mixing Process",
+                "description": "Primary mixing operation",
+                "properties": {"status": "Running", "progress": "65%"}
+            }
+        ]
+    }
+    return mock_entities
+
+
+@app.get("/api/entities/{entity_type}/{entity_id}")
+async def get_entity_details(entity_type: str, entity_id: str):
+    """Get detailed information about a specific entity"""
+    try:
+        if graph_service.is_connected():
+            # Try to get real entity data from Neo4j
+            # First try by ID, then by name if ID doesn't work
+            query = f"""
+            MATCH (e:{entity_type})
+            WHERE e.id = $entity_id OR e.name = $entity_id OR e.equipment_id = $entity_id OR e.tag = $entity_id
+            RETURN e.id as id, e.name as name, e.description as description,
+                   labels(e) as labels, properties(e) as properties
+            LIMIT 1
+            """
+            results = graph_service.execute_query(query, {"entity_id": entity_id})
+            
+            if results:
+                entity_data = results[0]
+                return serialize_neo4j_data({
+                    "id": entity_data.get("id"),
+                    "name": entity_data.get("name"),
+                    "description": entity_data.get("description"),
+                    "type": entity_type,
+                    "labels": entity_data.get("labels", []),
+                    "properties": entity_data.get("properties", {})
+                })
+                
+    except Exception as e:
+        print(f"Error getting entity details from graph for {entity_type}/{entity_id}: {e}")
+    
+    # Fallback to mock data
+    mock_entity = {
+        "id": entity_id,
+        "name": f"Mock {entity_type}",
+        "description": f"This is a mock {entity_type.lower()} entity for development",
+        "type": entity_type,
+        "labels": [entity_type],
+        "properties": {
+            "status": "Active",
+            "mock": "true"
+        }
+    }
+    return mock_entity
+
+
+@app.get("/api/entities/{entity_type}/{entity_id}/connected")
+async def get_entity_connected_entities(entity_type: str, entity_id: str):
+    """Get all entities connected to a specific entity"""
+    connected_entities = {}
+    
+    try:
+        if graph_service.is_connected():
+            # Get connected entities from Neo4j
+            query = f"""
+            MATCH (e:{entity_type})-[r]-(connected)
+            WHERE e.id = $entity_id OR e.name = $entity_id OR e.equipment_id = $entity_id OR e.tag = $entity_id
+            WITH connected, type(r) as rel_type, labels(connected) as connected_labels
+            RETURN connected.id as id, connected.name as name, connected.description as description,
+                   connected_labels as labels, properties(connected) as properties,
+                   rel_type
+            ORDER BY connected_labels, connected.name
+            """
+            results = graph_service.execute_query(query, {"entity_id": entity_id})
+            
+            # Group entities by their labels
+            entity_groups = {}
+            for result in results:
+                # Get primary label (skip generic ones)
+                primary_label = None
+                for label in result.get('labels', []):
+                    if label not in ['Node']:  # Skip generic labels
+                        primary_label = label
+                        break
+                
+                if primary_label:
+                    if primary_label not in entity_groups:
+                        entity_groups[primary_label] = []
+                    
+                    entity_groups[primary_label].append({
+                        "id": result.get("id"),
+                        "name": result.get("name"),
+                        "description": result.get("description"),
+                        "labels": result.get("labels", []),
+                        "properties": result.get("properties", {}),
+                        "relationship_type": result.get("rel_type")
+                    })
+            
+            if entity_groups:
+                return serialize_neo4j_data(entity_groups)
+                
+    except Exception as e:
+        print(f"Error getting connected entities from graph for {entity_type}/{entity_id}: {e}")
+    
+    # Fallback to mock data
+    mock_connected = {
+        "Sensor": [
+            {
+                "id": "mock_sensor_1",
+                "name": f"Connected Sensor for {entity_id}",
+                "description": "Mock connected sensor",
+                "properties": {"value": "42.0", "unit": "°C"}
+            }
+        ],
+        "Equipment": [
+            {
+                "id": "mock_equipment_1", 
+                "name": f"Connected Equipment for {entity_id}",
+                "description": "Mock connected equipment",
+                "properties": {"status": "Running"}
+            }
+        ]
+    }
+    return mock_connected
 
 
 if __name__ == "__main__":

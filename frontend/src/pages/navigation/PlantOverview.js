@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Factory, MapPin, Activity, AlertCircle, ChevronRight } from 'lucide-react';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const OverviewContainer = styled.div`
   width: 100%;
@@ -240,6 +241,12 @@ const PlantOverview = () => {
 
   return (
     <OverviewContainer>
+      <Breadcrumb 
+        items={[
+          { label: 'Plants', path: '/navigate', isActive: true }
+        ]} 
+      />
+      
       <Header>
         <Title>Factory Navigation</Title>
         <Subtitle>
