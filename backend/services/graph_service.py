@@ -147,19 +147,17 @@ class GraphService:
             List of equipment node dictionaries
         """
         query = """
-        MATCH path = (a:AssetArea {name: $area_name})-[r*1..2]->(e:Equipment)
+        MATCH (a:AssetArea {name: $area_name})-[:CONTAINS]->(e:Equipment)
         RETURN e.id as id, e.name as name, e.description as description,
-               labels(e) as labels, 
-               [rel in relationships(path) | type(rel)] as relationship_types,
-               length(path) as distance,
-               properties(e) as properties
-        ORDER BY distance, e.name
+               labels(e) as labels, properties(e) as properties
+        ORDER BY e.name
         """
         return self.execute_query(query, {"area_name": area_name})
     
     def get_sensors_by_asset_area(self, area_name: str) -> List[Dict[str, Any]]:
         """
         Get all sensors connected to a specific asset area
+        This includes sensors directly connected to the area AND sensors connected via equipment
         
         Args:
             area_name: The asset area name
@@ -168,10 +166,10 @@ class GraphService:
             List of sensor node dictionaries  
         """
         query = """
-        MATCH (a:AssetArea {name: $area_name})-[r*1..3]->(s:Sensor)
+        MATCH (a:AssetArea {name: $area_name})-[:HAS_SENSOR]->(s:Sensor)
         RETURN s.id as id, s.name as name, s.description as description,
                labels(s) as labels, properties(s) as properties
-        ORDER BY s.name
+        ORDER BY s.properties.tag, s.name
         """
         return self.execute_query(query, {"area_name": area_name})
     
@@ -195,6 +193,59 @@ class GraphService:
         ORDER BY distance, s.name
         """
         return self.execute_query(query, {"equipment_name": equipment_name})
+    
+    def get_categorized_sensors_by_area(self, area_name: str) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get sensors categorized by their connection type (equipment-connected vs area-only)
+        
+        Args:
+            area_name: The asset area name
+            
+        Returns:
+            Dictionary with 'equipment_connected' and 'area_only' sensor lists
+        """
+        # Get all area sensors
+        area_sensors_query = """
+        MATCH (a:AssetArea {name: $area_name})-[:HAS_SENSOR]->(s:Sensor)
+        RETURN s.id as id, s.name as name, s.description as description,
+               labels(s) as labels, properties(s) as properties
+        ORDER BY s.properties.tag, s.name
+        """
+        area_sensors = self.execute_query(area_sensors_query, {"area_name": area_name})
+        
+        # Get equipment-connected sensors in this area
+        equipment_sensors_query = """
+        MATCH (a:AssetArea {name: $area_name})-[:CONTAINS]->(e:Equipment)
+        MATCH (e)-[r*1..2]->(s:Sensor)
+        WITH DISTINCT s, e
+        RETURN s.id as id, s.name as name, s.description as description,
+               labels(s) as labels, properties(s) as properties,
+               e.properties.equipment_name as equipment_name
+        ORDER BY s.properties.tag, s.name
+        """
+        equipment_sensors = self.execute_query(equipment_sensors_query, {"area_name": area_name})
+        
+        # Create a set of equipment-connected sensor tags for quick lookup
+        equipment_sensor_tags = {sensor['properties'].get('tag') for sensor in equipment_sensors if sensor['properties']}
+        
+        # Categorize sensors
+        area_only_sensors = []
+        equipment_connected_sensors = []
+        
+        for sensor in area_sensors:
+            sensor_tag = sensor['properties'].get('tag') if sensor['properties'] else None
+            classification = sensor['properties'].get('classification') if sensor['properties'] else None
+            
+            # Check if sensor is equipment-connected via graph relationships OR classification
+            if sensor_tag in equipment_sensor_tags or classification == 'EQUIPMENT':
+                equipment_connected_sensors.append(sensor)
+            else:
+                area_only_sensors.append(sensor)
+        
+        return {
+            'equipment_connected': equipment_connected_sensors,
+            'area_only': area_only_sensors
+        }
     
     def get_connected_nodes(self, node_id: str, max_depth: int = 1) -> List[Dict[str, Any]]:
         """

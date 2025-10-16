@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import Navbar from './components/Navbar';
 import ImportPage from './pages/ImportPage';
 import QueryPage from './pages/QueryPage';
+import NavigationPage from './pages/navigation/NavigationPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -23,9 +24,10 @@ function App() {
         <Navbar />
         <ContentContainer>
           <Routes>
-            <Route path="/" element={<Navigate to="/import" replace />} />
+            <Route path="/" element={<Navigate to="/navigate" replace />} />
             <Route path="/import" element={<ImportPage />} />
             <Route path="/query" element={<QueryPage />} />
+            <Route path="/navigate/*" element={<NavigationPage />} />
           </Routes>
         </ContentContainer>
       </Router>
