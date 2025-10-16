@@ -53,10 +53,11 @@ Key principles:
 - [x] **US-012**: As a user, I want the AI to understand graph relationships so that it can provide insights about connected entities
 - [x] **US-013**: As a user, I want the AI to clearly indicate when it doesn't have data rather than making up answers
 
-### Epic 4: Graph Visualization
-- [ ] **US-014**: As a user, I want to see a visual representation of my current scope in the graph so that I understand relationships
-- [ ] **US-015**: As a user, I want to discover related equipment through the graph visualization so that I can explore connected entities
-- [ ] **US-016**: As a user, I want to see orphaned sensors clearly indicated in the visualization so that I understand data coverage
+### Epic 4: Graph Visualization - ❌ REMOVED
+- [x] ~~**US-014**: Visual representation of current scope~~ - Removed due to poor UX
+- [x] ~~**US-015**: Discover related equipment through visualization~~ - Removed due to poor UX  
+- [x] ~~**US-016**: Clear indication of orphaned sensors~~ - Removed due to poor UX
+- ✅ **Enhanced Neo4j Properties**: Added UI support for new sensor units, equipment types, and source tags
 
 ### Epic 5: Data Integration (Foundation)
 - [ ] **US-017**: As a user, I want the AI to use graph node properties and relationships so that I get contextual responses based on available data
