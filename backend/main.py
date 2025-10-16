@@ -102,6 +102,12 @@ class QueryRequest(BaseModel):
     use_adx: bool = True
 
 
+class ContextualQueryRequest(BaseModel):
+    query: str
+    use_adx: bool = True
+    context: Optional[Dict[str, Any]] = None  # Navigation context for scoped queries
+
+
 class QueryResponse(BaseModel):
     query: str
     response: str
@@ -365,6 +371,55 @@ async def process_query(request: QueryRequest):
         raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
 
 
+@app.post("/query/contextual", response_model=QueryResponse)
+async def process_contextual_query(request: ContextualQueryRequest):
+    """Process contextual natural language queries with graph navigation scope"""
+    if not openai_client:
+        raise HTTPException(status_code=503, detail="OpenAI client not available")
+    
+    try:
+        # Get schema information from ADX MCP or local database
+        schema_info = await get_schema_info(request.use_adx)
+        
+        # Get contextual graph data if context is provided
+        context_data = None
+        if request.context and request.context.get('nodeType') and request.context.get('nodeName'):
+            context_data = await get_contextual_graph_data(request.context)
+        
+        # Create contextual system prompt
+        system_prompt = create_contextual_system_prompt(schema_info, context_data, request.use_adx)
+        
+        # Query OpenAI agent with context
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": request.query}
+            ],
+            temperature=0.1
+        )
+        
+        agent_response = response.choices[0].message.content
+        
+        # Try to extract and execute any SQL/KQL query from the response
+        data = None
+        if request.use_adx:
+            data = await execute_adx_query_from_response(agent_response)
+        else:
+            data = await execute_sql_query_from_response(agent_response)
+        
+        return QueryResponse(
+            query=request.query,
+            response=agent_response,
+            data=data,
+            source=f"{'adx' if request.use_adx else 'local'}-contextual",
+            timestamp=datetime.now()
+        )
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Contextual query processing failed: {str(e)}")
+
+
 async def get_schema_info(use_adx: bool) -> Dict[str, Any]:
     """Get schema information from ADX MCP or local database"""
     if use_adx:
@@ -415,6 +470,84 @@ When answering queries:
 Focus on providing actionable insights for plant operations and maintenance."""
     
     return prompt
+
+
+def create_contextual_system_prompt(schema_info: Dict[str, Any], context_data: Optional[Dict[str, Any]], use_adx: bool) -> str:
+    """Create contextual system prompt for scoped OpenAI agent responses"""
+    query_language = "KQL (Kusto Query Language)" if use_adx else "SQL"
+    
+    base_prompt = f"""You are an expert industrial data analyst with access to sensor and configuration data.
+
+Available tables and columns:
+{json.dumps(schema_info, indent=2)}
+"""
+
+    # Add contextual information if available
+    if context_data:
+        context_prompt = f"""
+🔍 CURRENT NAVIGATION CONTEXT:
+You are currently focused on: {context_data.get('context_scope', 'Unknown')}
+Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({context_data.get('central_node', {}).get('labels', [])})
+"""
+        
+        # Add connected nodes information
+        if context_data.get('connected_nodes'):
+            context_prompt += f"\nConnected Entities ({len(context_data['connected_nodes'])} found):\n"
+            for node in context_data['connected_nodes'][:10]:  # Limit to first 10 for brevity
+                node_labels = ', '.join(node.get('labels', []))
+                context_prompt += f"- {node.get('name', 'Unknown')} ({node_labels})\n"
+            
+            if len(context_data['connected_nodes']) > 10:
+                context_prompt += f"... and {len(context_data['connected_nodes']) - 10} more entities\n"
+        
+        context_prompt += f"\nTotal entities in scope: {context_data.get('total_nodes', 0)}\n"
+        context_prompt += "\n⚠️  IMPORTANT: Your responses should be FOCUSED on this specific context. When the user asks about 'sensors', 'equipment', or 'data', prioritize information related to the entities listed above.\n"
+        
+        base_prompt += context_prompt
+    
+    base_prompt += f"""
+
+You can answer questions about:
+- HMI sensor data (timestamps, values, units, quality)
+- Tag configurations (descriptions, scan frequencies, limits) 
+- Itera measurements (various LI sensor readings)
+- Graph relationships between plants, areas, equipment, and sensors
+
+When answering queries:
+1. **PRIORITIZE CONTEXTUAL RELEVANCE**: Focus on the current navigation scope and connected entities
+2. Provide clear, insightful analysis of the industrial data
+3. If a {query_language} query would be helpful, include it in your response between ```{query_language.lower()} and ``` tags
+4. Explain what the data shows in business/operational terms
+5. Highlight any anomalies, trends, or important insights
+6. Use appropriate industrial terminology
+7. **Reference specific entities from the current context when relevant**
+
+Focus on providing actionable insights for plant operations and maintenance within the current scope."""
+    
+    return base_prompt
+
+
+async def get_contextual_graph_data(context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Get contextual graph data for the current navigation scope"""
+    if not graph_service.is_connected():
+        return None
+    
+    try:
+        node_type = context.get('nodeType')
+        node_name = context.get('nodeName') 
+        scope_depth = context.get('scopeDepth', 2)
+        
+        if not node_type or not node_name:
+            return None
+        
+        # Get contextual subgraph using existing graph service method
+        context_data = graph_service.get_contextual_subgraph(node_name, node_type, scope_depth)
+        
+        return context_data
+        
+    except Exception as e:
+        print(f"Error getting contextual graph data: {e}")
+        return None
 
 
 async def execute_adx_query_from_response(response: str) -> Optional[List[Dict[str, Any]]]:

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { Factory, MapPin, Activity, AlertCircle, ChevronRight } from 'lucide-react';
+import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 
@@ -161,14 +162,17 @@ const ErrorState = styled.div`
 
 const PlantOverview = () => {
   const navigate = useNavigate();
+  const { setPlantContext, clearContext } = useNavigationContext();
   const [plants, setPLants] = useState([]);
   const [areas, setAreas] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // Clear context when viewing plant overview
+    clearContext();
     loadPlantsAndAreas();
-  }, []);
+  }, [clearContext]);
 
   const loadPlantsAndAreas = async () => {
     try {

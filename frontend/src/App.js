@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { NavigationProvider } from './contexts/NavigationContext';
 import Navbar from './components/Navbar';
 import ImportPage from './pages/ImportPage';
 import QueryPage from './pages/QueryPage';
@@ -19,19 +20,21 @@ const ContentContainer = styled.div`
 
 function App() {
   return (
-    <AppContainer>
-      <Router>
-        <Navbar />
-        <ContentContainer>
-          <Routes>
-            <Route path="/" element={<Navigate to="/navigate" replace />} />
-            <Route path="/import" element={<ImportPage />} />
-            <Route path="/query" element={<QueryPage />} />
-            <Route path="/navigate/*" element={<NavigationPage />} />
-          </Routes>
-        </ContentContainer>
-      </Router>
-    </AppContainer>
+    <NavigationProvider>
+      <AppContainer>
+        <Router>
+          <Navbar />
+          <ContentContainer>
+            <Routes>
+              <Route path="/" element={<Navigate to="/navigate" replace />} />
+              <Route path="/import" element={<ImportPage />} />
+              <Route path="/query" element={<QueryPage />} />
+              <Route path="/navigate/*" element={<NavigationPage />} />
+            </Routes>
+          </ContentContainer>
+        </Router>
+      </AppContainer>
+    </NavigationProvider>
   );
 }
 

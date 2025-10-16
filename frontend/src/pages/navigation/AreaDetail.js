@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge, BarChart3, Settings, Database, Play, Box } from 'lucide-react';
+import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 
@@ -136,6 +137,7 @@ const ErrorState = styled.div`
 const AreaDetail = () => {
   const { areaId } = useParams();
   const navigate = useNavigate();
+  const { setAreaContext } = useNavigationContext();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [areaData, setAreaData] = useState(null);
@@ -195,11 +197,11 @@ const AreaDetail = () => {
             
             // Extract plant name - try to infer from area code or set default
             const plantCode = areaName.split('-')[0]; // e.g., "40" from "40-10"
-            if (plantCode === '40') {
-              setPlantName('S-Plant');
-            } else {
-              setPlantName('S-Plant'); // Default fallback
-            }
+            const plant = plantCode === '40' ? 'S-Plant' : 'S-Plant'; // Default fallback
+            setPlantName(plant);
+            
+            // Set navigation context for this area
+            setAreaContext(areaName, area, plant);
             
             // Calculate stats
             const totalEntities = Object.values(entities).reduce((sum, arr) => sum + arr.length, 0);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge, BarChart3, Settings, Database, Play, Box } from 'lucide-react';
+import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 
