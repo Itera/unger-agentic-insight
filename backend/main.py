@@ -492,15 +492,42 @@ You are currently focused on: {context_data.get('context_scope', 'Unknown')}
 Central Node: {context_data.get('central_node', {}).get('name', 'Unknown')} ({context_data.get('central_node', {}).get('labels', [])})
 """
         
-        # Add connected nodes information
+        # Add connected nodes information with relationships
         if context_data.get('connected_nodes'):
             context_prompt += f"\nConnected Entities ({len(context_data['connected_nodes'])} found):\n"
-            for node in context_data['connected_nodes'][:10]:  # Limit to first 10 for brevity
-                node_labels = ', '.join(node.get('labels', []))
-                context_prompt += f"- {node.get('name', 'Unknown')} ({node_labels})\n"
             
-            if len(context_data['connected_nodes']) > 10:
-                context_prompt += f"... and {len(context_data['connected_nodes']) - 10} more entities\n"
+            # Group by relationship types and entity types
+            entity_relationships = {}
+            for node in context_data['connected_nodes'][:15]:  # Show more entities for better context
+                node_labels = ', '.join(node.get('labels', []))
+                node_name = node.get('name', 'Unknown')
+                relationship_path = node.get('relationship_path', [])
+                depth = node.get('depth', 'unknown')
+                
+                # Determine relationship context
+                if relationship_path:
+                    rel_context = f"via {' → '.join(relationship_path)}"
+                else:
+                    rel_context = f"at depth {depth}"
+                
+                context_prompt += f"- {node_name} ({node_labels}) - {rel_context}\n"
+                
+                # Track relationship patterns for summary
+                primary_type = node_labels.split(',')[0].strip() if node_labels else 'Unknown'
+                if primary_type not in entity_relationships:
+                    entity_relationships[primary_type] = []
+                entity_relationships[primary_type].append(node_name)
+            
+            if len(context_data['connected_nodes']) > 15:
+                context_prompt += f"... and {len(context_data['connected_nodes']) - 15} more entities\n"
+            
+            # Add relationship summary
+            context_prompt += "\n📊 RELATIONSHIP SUMMARY:\n"
+            for entity_type, entities in entity_relationships.items():
+                context_prompt += f"- {len(entities)} {entity_type}(s): {', '.join(entities[:3])}"
+                if len(entities) > 3:
+                    context_prompt += f" and {len(entities) - 3} more"
+                context_prompt += "\n"
         
         context_prompt += f"\nTotal entities in scope: {context_data.get('total_nodes', 0)}\n"
         context_prompt += "\n⚠️  IMPORTANT: Your responses should be FOCUSED on this specific context. When the user asks about 'sensors', 'equipment', or 'data', prioritize information related to the entities listed above.\n"
@@ -517,14 +544,28 @@ You can answer questions about:
 
 When answering queries:
 1. **PRIORITIZE CONTEXTUAL RELEVANCE**: Focus on the current navigation scope and connected entities
-2. Provide clear, insightful analysis of the industrial data
-3. If a {query_language} query would be helpful, include it in your response between ```{query_language.lower()} and ``` tags
-4. Explain what the data shows in business/operational terms
-5. Highlight any anomalies, trends, or important insights
-6. Use appropriate industrial terminology
-7. **Reference specific entities from the current context when relevant**
+2. **EXPLAIN RELATIONSHIPS**: When discussing entities, explain their relationships (e.g., "Sensor X is connected to Equipment Y in Area Z")
+3. **BE TRANSPARENT ABOUT DATA LIMITATIONS**: 
+   - If you don't have specific data, clearly state "I don't have data for [specific thing]" 
+   - Don't make up numbers, dates, or technical specifications
+   - If asked about real-time data or maintenance schedules, explain these would come from live systems
+4. **LEVERAGE GRAPH RELATIONSHIPS**: 
+   - Suggest related entities that might be relevant ("You might also want to check the connected sensors...")
+   - Explain how entities are interconnected in the plant hierarchy
+   - Identify potential impact relationships ("If this equipment fails, these sensors would be affected...")
+5. Provide clear, insightful analysis of available industrial data
+6. If a {query_language} query would be helpful, include it in your response between ```{query_language.lower()} and ``` tags
+7. Explain what the data shows in business/operational terms
+8. Highlight any anomalies, trends, or important insights
+9. Use appropriate industrial terminology
+10. **Reference specific entities from the current context when relevant**
 
-Focus on providing actionable insights for plant operations and maintenance within the current scope."""
+🎯 **GOLDEN RULES**:
+- **ACCURACY OVER ASSUMPTIONS**: Better to say "I don't have that data" than guess
+- **RELATIONSHIP AWARENESS**: Use the connected entities to provide richer insights
+- **PRACTICAL FOCUS**: Always tie insights back to operational impact and maintenance needs
+
+Focus on providing actionable, accurate insights for plant operations and maintenance within the current scope."""
     
     return base_prompt
 

@@ -47,11 +47,11 @@ Key principles:
 - [x] **US-008**: As a user, I want to see orphaned sensors (area-connected but not equipment-specific) so that I can still access all available data
 
 ### Epic 3: Contextual AI Chat
-- [ ] **US-009**: As a user, I want the AI chat to be scoped to my current selection + connected nodes so that queries are more relevant and precise
+- [x] **US-009**: As a user, I want the AI chat to be scoped to my current selection + connected nodes so that queries are more relevant and precise
 - [x] **US-010**: As a user, I want to see what context the AI is using (both visually and textually) so that I understand the scope of responses
-- [ ] **US-011**: As a user, I want to toggle between scoped and global chat modes so that I can choose my query scope
-- [ ] **US-012**: As a user, I want the AI to understand graph relationships so that it can provide insights about connected entities
-- [ ] **US-013**: As a user, I want the AI to clearly indicate when it doesn't have data rather than making up answers
+- [x] **US-011**: As a user, I want to toggle between scoped and global chat modes so that I can choose my query scope
+- [x] **US-012**: As a user, I want the AI to understand graph relationships so that it can provide insights about connected entities
+- [x] **US-013**: As a user, I want the AI to clearly indicate when it doesn't have data rather than making up answers
 
 ### Epic 4: Graph Visualization
 - [ ] **US-014**: As a user, I want to see a visual representation of my current scope in the graph so that I understand relationships
