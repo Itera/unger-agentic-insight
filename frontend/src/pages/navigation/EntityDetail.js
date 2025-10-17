@@ -584,8 +584,8 @@ const EntityDetail = () => {
           </Section>
         )}
         
-        {/* Work Orders Section - Show for sensors and some other entity types */}
-        {(entityType === 'Sensor' || entityType === 'Equipment Sensors' || entityType === 'Area Sensors') && (
+        {/* Work Orders Section - Show for sensors, equipment, and some other entity types */}
+        {(entityType === 'Sensor' || entityType === 'Equipment Sensors' || entityType === 'Area Sensors' || entityType === 'Equipment') && (
           <WorkOrdersSection 
             entityType={entityType} 
             entityName={entityData?.name || 

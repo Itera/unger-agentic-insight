@@ -68,7 +68,7 @@ class MaintenanceAPIService:
         
         try:
             response = requests.post(
-                f"{self.base_url}/api/token",
+                f"{self.base_url}/connect/token",
                 json={
                     "username": self.username,
                     "password": self.password
@@ -155,8 +155,8 @@ class MaintenanceAPIService:
                     description=item.get("description", ""),
                     comment=item.get("comment", ""),
                     status=item["status"],
-                    from_date=item["from"],
-                    to_date=item["to"],
+                    from_date=item.get("from", item.get("from_date", "")),
+                    to_date=item.get("to", item.get("to_date", "")),
                     created_at=item["createdAt"],
                     finished_date=item.get("finishedDate"),
                     priority=item["priority"],

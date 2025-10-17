@@ -1408,6 +1408,84 @@ async def get_area_work_orders(area_name: str):
         raise HTTPException(status_code=500, detail=f"Failed to get area work orders: {str(e)}")
 
 
+@app.get("/api/equipment/{equipment_name}/work-orders")
+async def get_equipment_work_orders(equipment_name: str):
+    """Get all work orders for sensors connected to a specific equipment"""
+    if not maintenance_service:
+        raise HTTPException(status_code=503, detail="Maintenance API service not available")
+    
+    if not graph_service.is_connected():
+        raise HTTPException(status_code=503, detail="Graph service not available")
+    
+    try:
+        # Get all sensors connected to this equipment
+        sensors = graph_service.get_sensors_by_equipment(equipment_name)
+        if not sensors:
+            return {
+                "equipment": equipment_name,
+                "work_orders": [],
+                "count": 0,
+                "message": "No sensors found connected to equipment"
+            }
+        
+        # Get sensor names from the graph results
+        sensor_names = []
+        for sensor in sensors:
+            # Try different possible fields for sensor name/tag
+            sensor_name = (sensor.get('name') or 
+                          sensor.get('tag') or 
+                          sensor.get('properties', {}).get('tag') or
+                          sensor.get('properties', {}).get('name'))
+            if sensor_name:
+                sensor_names.append(sensor_name)
+        
+        if not sensor_names:
+            return {
+                "equipment": equipment_name,
+                "work_orders": [],
+                "count": 0,
+                "message": "No valid sensor names found connected to equipment"
+            }
+        
+        # Get work orders for all sensors connected to the equipment
+        all_work_orders_by_sensor = maintenance_service.get_work_orders_for_sensors(sensor_names)
+        
+        # Flatten all work orders with sensor information
+        all_work_orders = []
+        for sensor_name, work_orders in all_work_orders_by_sensor.items():
+            for wo in work_orders:
+                all_work_orders.append({
+                    "sensor_name": sensor_name,
+                    "id": wo.id,
+                    "nr": wo.nr,
+                    "asset_id": wo.asset_id,
+                    "short_description": wo.short_description,
+                    "description": wo.description,
+                    "comment": wo.comment,
+                    "status": wo.status,
+                    "from_date": wo.from_date,
+                    "to_date": wo.to_date,
+                    "created_at": wo.created_at,
+                    "finished_date": wo.finished_date,
+                    "priority": wo.priority,
+                    "url": wo.url,
+                    "is_reactive_maintenance": wo.is_reactive_maintenance
+                })
+        
+        # Sort by date (most recent first)
+        all_work_orders.sort(key=lambda x: x['created_at'], reverse=True)
+        
+        return {
+            "equipment": equipment_name,
+            "sensors_checked": sensor_names,
+            "work_orders": all_work_orders,
+            "count": len(all_work_orders)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get equipment work orders: {str(e)}")
+
+
 @app.get("/api/work-orders/test-transform/{sensor_name}")
 async def test_sensor_transform(sensor_name: str):
     """Test endpoint to verify sensor name transformation"""

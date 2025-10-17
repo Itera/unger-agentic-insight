@@ -215,13 +215,16 @@ const WorkOrdersSection = ({ entityType, entityName, areaName }) => {
         setError(null);
 
         let endpoint;
-        if (entityType === 'AssetArea' || areaName) {
-          // Fetch work orders for all sensors in the area
+        if (entityType === 'Sensor' || entityType === 'Equipment Sensors' || entityType === 'Area Sensors') {
+          // Fetch work orders for specific sensor (highest priority)
+          endpoint = `/api/sensors/${encodeURIComponent(entityName)}/work-orders`;
+        } else if (entityType === 'Equipment') {
+          // Fetch work orders for all sensors connected to this equipment
+          endpoint = `/api/equipment/${encodeURIComponent(entityName)}/work-orders`;
+        } else if (entityType === 'AssetArea' || areaName) {
+          // Fetch work orders for all sensors in the area (fallback)
           const areaToUse = areaName || entityName;
           endpoint = `/api/areas/${encodeURIComponent(areaToUse)}/work-orders`;
-        } else if (entityType === 'Sensor') {
-          // Fetch work orders for specific sensor
-          endpoint = `/api/sensors/${encodeURIComponent(entityName)}/work-orders`;
         } else {
           // For other entity types, we don't fetch work orders
           setLoading(false);
