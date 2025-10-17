@@ -1418,8 +1418,33 @@ async def get_equipment_work_orders(equipment_name: str):
         raise HTTPException(status_code=503, detail="Graph service not available")
     
     try:
-        # Get all sensors connected to this equipment
-        sensors = graph_service.get_sensors_by_equipment(equipment_name)
+        # Get all sensors connected to this equipment using the same logic as connected entities
+        neo4j_label = map_entity_type_to_neo4j_label('Equipment')
+        
+        # Get connected entities from Neo4j (same query as in get_entity_connected_entities)
+        query = f"""
+        MATCH (e:{neo4j_label})-[r]-(connected)
+        WHERE e.id = $entity_id OR e.name = $entity_id OR e.equipment_id = $entity_id OR e.tag = $entity_id
+        AND 'Sensor' IN labels(connected)
+        WITH connected, type(r) as rel_type, labels(connected) as connected_labels
+        RETURN connected.id as id, connected.name as name, connected.description as description,
+               connected_labels as labels, properties(connected) as properties,
+               rel_type
+        ORDER BY connected_labels, connected.name
+        """
+        results = graph_service.execute_query(query, {"entity_id": equipment_name})
+        
+        sensors = []
+        for result in results:
+            sensors.append({
+                "id": result.get("id"),
+                "name": result.get("name"),
+                "description": result.get("description"),
+                "labels": result.get("labels", []),
+                "properties": result.get("properties", {}),
+                "relationship_type": result.get("rel_type")
+            })
+        
         if not sensors:
             return {
                 "equipment": equipment_name,
