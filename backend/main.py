@@ -1372,30 +1372,44 @@ async def get_area_work_orders(area_name: str):
         # Get work orders for all sensors in the area
         all_work_orders_by_sensor = maintenance_service.get_work_orders_for_sensors(sensor_names)
         
-        # Flatten all work orders with sensor information
-        all_work_orders = []
+        # Flatten all work orders with sensor information, deduplicating by work order ID
+        work_orders_dict = {}  # Use dict to deduplicate by work order ID
+        sensor_mapping = {}  # Track which sensors are associated with each work order
+        
         for sensor_name, work_orders in all_work_orders_by_sensor.items():
             for wo in work_orders:
-                all_work_orders.append({
-                    "sensor_name": sensor_name,
-                    "id": wo.id,
-                    "nr": wo.nr,
-                    "asset_id": wo.asset_id,
-                    "short_description": wo.short_description,
-                    "description": wo.description,
-                    "comment": wo.comment,
-                    "status": wo.status,
-                    "from_date": wo.from_date,
-                    "to_date": wo.to_date,
-                    "created_at": wo.created_at,
-                    "finished_date": wo.finished_date,
-                    "priority": wo.priority,
-                    "url": wo.url,
-                    "is_reactive_maintenance": wo.is_reactive_maintenance
-                })
+                wo_id = wo.id
+                if wo_id not in work_orders_dict:
+                    work_orders_dict[wo_id] = {
+                        "sensor_name": sensor_name,  # Use first sensor found
+                        "id": wo.id,
+                        "nr": wo.nr,
+                        "asset_id": wo.asset_id,
+                        "short_description": wo.short_description,
+                        "description": wo.description,
+                        "comment": wo.comment,
+                        "status": wo.status,
+                        "from_date": wo.from_date,
+                        "to_date": wo.to_date,
+                        "created_at": wo.created_at,
+                        "finished_date": wo.finished_date,
+                        "priority": wo.priority,
+                        "url": wo.url,
+                        "is_reactive_maintenance": wo.is_reactive_maintenance
+                    }
+                    sensor_mapping[wo_id] = [sensor_name]
+                else:
+                    # Add additional sensors to the mapping for this work order
+                    if sensor_name not in sensor_mapping[wo_id]:
+                        sensor_mapping[wo_id].append(sensor_name)
         
-        # Sort by date (most recent first)
-        all_work_orders.sort(key=lambda x: x['created_at'], reverse=True)
+        # Convert dict back to list and add related sensors
+        all_work_orders = list(work_orders_dict.values())
+        for wo in all_work_orders:
+            wo["related_sensors"] = sensor_mapping[wo["id"]]
+        
+        # Sort by created_at date, handling empty dates
+        all_work_orders.sort(key=lambda x: x['created_at'] if x['created_at'] else '', reverse=True)
         
         return {
             "area": area_name,
