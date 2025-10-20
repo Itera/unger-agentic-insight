@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import { Upload, Search, Database } from 'lucide-react';
+import { Upload, Search, Database, Network } from 'lucide-react';
 
 const NavContainer = styled.nav`
   position: fixed;
@@ -74,6 +74,13 @@ const Navbar = () => {
         >
           <Search size={18} />
           Query Data
+        </NavLink>
+        <NavLink 
+          to="/navigate" 
+          active={location.pathname.startsWith('/navigate') ? 1 : 0}
+        >
+          <Network size={18} />
+          Navigate
         </NavLink>
       </NavLinks>
     </NavContainer>

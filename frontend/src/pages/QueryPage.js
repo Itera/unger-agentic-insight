@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
 import axios from 'axios';
-import { Send, Brain, Database, BarChart3, Clock } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import styled from 'styled-components';
+import { Send, Brain, Clock, Database, BarChart3, MapPin, Target } from 'lucide-react';
+import { useNavigationContext } from '../contexts/NavigationContext';
+import ContextVisualization from '../components/ContextVisualization';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const PageContainer = styled.div`
   max-width: 1400px;
@@ -203,20 +205,51 @@ const ExampleButton = styled.button`
 `;
 
 const QueryPage = () => {
+  const { getChatContext, hasActiveContext, getContextSummary, chatMode, toggleChatMode } = useNavigationContext();
   const [query, setQuery] = useState('');
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [useAdx, setUseAdx] = useState(false);
+  const [contextData, setContextData] = useState(null);
+
+  // Fetch context data when chat context changes
+  React.useEffect(() => {
+    const fetchContextData = async () => {
+      const chatContext = getChatContext();
+      if (chatMode === 'scoped' && chatContext && chatContext.nodeName) {
+        try {
+          const response = await axios.get(
+            `/api/graph/context/${chatContext.nodeType}/${encodeURIComponent(chatContext.nodeName)}`
+          );
+          setContextData(response.data);
+        } catch (error) {
+          console.error('Failed to fetch context data:', error);
+          setContextData(null);
+        }
+      } else {
+        setContextData(null);
+      }
+    };
+    
+    fetchContextData();
+  }, [getChatContext, chatMode]);
 
   const handleSubmit = async () => {
     if (!query.trim()) return;
 
     setLoading(true);
     try {
-      const result = await axios.post('/query', {
+      const chatContext = getChatContext();
+      const isContextual = chatMode === 'scoped' && chatContext;
+      
+      const endpoint = isContextual ? '/query/contextual' : '/query';
+      const requestData = {
         query: query.trim(),
-        use_adx: useAdx
-      });
+        use_adx: useAdx,
+        ...(isContextual && { context: chatContext })
+      };
+      
+      const result = await axios.post(endpoint, requestData);
       setResponse(result.data);
     } catch (error) {
       console.error('Query failed:', error);
@@ -307,6 +340,14 @@ const QueryPage = () => {
     <PageContainer>
       <Title>AI-Powered Industrial Insights</Title>
       
+      {/* Context Visualization */}
+      <ContextVisualization 
+        context={getChatContext()}
+        contextData={contextData || (response?.context_used)}
+        mode={chatMode}
+        isVisible={true}
+      />
+      
       <QuerySection>
         <InputContainer>
           <QueryInput
@@ -350,9 +391,32 @@ Examples:
               Use Azure Data Explorer (when configured)
             </ToggleLabel>
           </ToggleContainer>
-          <div style={{ color: '#666', fontSize: '0.9rem' }}>
-            {useAdx ? <Database size={16} /> : <BarChart3 size={16} />}
-            {useAdx ? ' ADX Mode' : ' Local Database Mode'}
+          
+          {/* Context Mode Toggle */}
+          <ToggleContainer>
+            <Toggle
+              type="checkbox"
+              id="chatMode"
+              checked={chatMode === 'scoped'}
+              onChange={toggleChatMode}
+            />
+            <ToggleLabel htmlFor="chatMode">
+              Scoped Chat Mode
+            </ToggleLabel>
+          </ToggleContainer>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem' }}>
+            <div style={{ color: '#666' }}>
+              {useAdx ? <Database size={16} /> : <BarChart3 size={16} />}
+              {useAdx ? ' ADX Mode' : ' Local Database Mode'}
+            </div>
+            
+            {/* Context Indicator */}
+            <div style={{ color: chatMode === 'scoped' && hasActiveContext ? '#667eea' : '#666' }}>
+              {chatMode === 'scoped' ? <Target size={16} /> : <MapPin size={16} />}
+              {chatMode === 'scoped' && hasActiveContext ? ` Scoped: ${getContextSummary()}` : 
+               chatMode === 'scoped' ? ' Scoped: No Context' : ' Global Mode'}
+            </div>
           </div>
         </OptionsContainer>
       </QuerySection>
