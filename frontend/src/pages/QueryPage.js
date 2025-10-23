@@ -9,24 +9,25 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 const PageContainer = styled.div`
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem 2rem;
 `;
 
 const Title = styled.h1`
-  color: white;
+  color: #1c1917;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  letter-spacing: -0.025em;
 `;
 
 const QuerySection = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
 `;
 
 const InputContainer = styled.div`
@@ -38,46 +39,52 @@ const InputContainer = styled.div`
 const QueryInput = styled.textarea`
   flex: 1;
   padding: 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 15px;
+  border: 2px solid #e7e5e4;
+  border-radius: 8px;
   font-size: 1rem;
+  font-family: inherit;
   resize: vertical;
   min-height: 100px;
-  transition: border-color 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1c1917;
 
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #047857;
+    box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.1);
   }
 
   &::placeholder {
-    color: #9ca3af;
+    color: #78716c;
   }
 `;
 
 const SendButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #047857;
   color: white;
   border: none;
   padding: 1rem 2rem;
-  border-radius: 15px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   gap: 0.5rem;
   min-height: 100px;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    background: #065f46;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(4, 120, 87, 0.3);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -101,17 +108,17 @@ const Toggle = styled.input`
 `;
 
 const ToggleLabel = styled.label`
-  color: #666;
+  color: #44403c;
   font-weight: 500;
   cursor: pointer;
 `;
 
 const ResponseSection = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
   margin-bottom: 2rem;
 `;
 
@@ -121,21 +128,22 @@ const ResponseHeader = styled.div`
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #f3f4f6;
+  border-bottom: 2px solid #e7e5e4;
 `;
 
 const ResponseText = styled.div`
   line-height: 1.6;
-  color: #374151;
+  color: #1c1917;
   white-space: pre-wrap;
   margin-bottom: 1rem;
 `;
 
 const DataVisualization = styled.div`
-  background: #f9fafb;
-  border-radius: 15px;
+  background: #f5f5f4;
+  border-radius: 8px;
   padding: 1.5rem;
   margin-top: 1rem;
+  border: 1px solid #e7e5e4;
 `;
 
 const DataTable = styled.div`
@@ -153,7 +161,7 @@ const Table = styled.table`
 `;
 
 const TableHeader = styled.th`
-  background: #667eea;
+  background: #047857;
   color: white;
   padding: 1rem;
   text-align: left;
@@ -162,12 +170,13 @@ const TableHeader = styled.th`
 
 const TableCell = styled.td`
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e7e5e4;
+  color: #44403c;
 `;
 
 const TableRow = styled.tr`
   &:nth-child(even) {
-    background: #f9fafb;
+    background: #f5f5f4;
   }
 `;
 
@@ -176,31 +185,34 @@ const LoadingSpinner = styled.div`
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: #667eea;
+  color: #047857;
 `;
 
 const ExampleQueries = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
 `;
 
 const ExampleButton = styled.button`
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid #667eea;
-  color: #667eea;
+  background: rgba(4, 120, 87, 0.1);
+  border: 1px solid #047857;
+  color: #065f46;
   padding: 0.75rem 1rem;
-  border-radius: 25px;
+  border-radius: 24px;
   cursor: pointer;
   margin: 0.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.9rem;
+  font-family: inherit;
+  font-weight: 500;
 
   &:hover {
-    background: #667eea;
+    background: #047857;
     color: white;
+    transform: translateY(-1px);
   }
 `;
 

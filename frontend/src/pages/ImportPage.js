@@ -7,37 +7,38 @@ import { Upload, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-reac
 const PageContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem 2rem;
 `;
 
 const Title = styled.h1`
-  color: white;
+  color: #1c1917;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
   font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  letter-spacing: -0.025em;
 `;
 
 const Card = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
 `;
 
 const DropzoneContainer = styled.div`
-  border: 3px dashed ${props => props.isDragActive ? '#667eea' : '#ccc'};
-  border-radius: 15px;
+  border: 3px dashed ${props => props.isDragActive ? '#047857' : '#d6d3d1'};
+  border-radius: 12px;
   padding: 3rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  background: ${props => props.isDragActive ? 'rgba(102, 126, 234, 0.1)' : 'transparent'};
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: ${props => props.isDragActive ? 'rgba(4, 120, 87, 0.1)' : 'transparent'};
 
   &:hover {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
+    border-color: #047857;
+    background: rgba(4, 120, 87, 0.05);
   }
 `;
 
@@ -46,7 +47,7 @@ const DropzoneText = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  color: #666;
+  color: #44403c;
   font-size: 1.1rem;
 `;
 
@@ -60,9 +61,9 @@ const FileItem = styled.div`
   justify-content: space-between;
   padding: 1rem;
   margin: 0.5rem 0;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 10px;
-  border-left: 4px solid #667eea;
+  background: rgba(4, 120, 87, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #047857;
 `;
 
 const FileInfo = styled.div`
@@ -86,25 +87,28 @@ const StatusIndicator = styled.div`
 `;
 
 const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #047857;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 25px;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: 1rem;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    background: #065f46;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(4, 120, 87, 0.3);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -116,21 +120,23 @@ const StatsContainer = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(4, 120, 87, 0.1);
   padding: 1.5rem;
-  border-radius: 15px;
+  border-radius: 12px;
   text-align: center;
+  border: 1px solid rgba(4, 120, 87, 0.2);
 `;
 
 const StatNumber = styled.div`
   font-size: 2rem;
   font-weight: bold;
-  color: #667eea;
+  color: #047857;
 `;
 
 const StatLabel = styled.div`
-  color: #666;
+  color: #44403c;
   margin-top: 0.5rem;
+  font-weight: 500;
 `;
 
 const ImportPage = () => {

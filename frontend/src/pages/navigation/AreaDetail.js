@@ -22,23 +22,27 @@ const BackButton = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  background: #ffffff;
+  border: 1px solid #e7e5e4;
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  color: white;
+  color: #1c1917;
   cursor: pointer;
-  transition: background 0.3s ease;
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: #f5f5f4;
+    border-color: #047857;
+    color: #047857;
   }
 `;
 
 const Title = styled.h1`
   font-size: 2rem;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: #1c1917;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 `;
 
 const ContentContainer = styled.div`
@@ -47,11 +51,11 @@ const ContentContainer = styled.div`
 `;
 
 const Section = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
 `;
 
 const SectionHeader = styled.div`
@@ -60,13 +64,13 @@ const SectionHeader = styled.div`
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid #e7e5e4;
 `;
 
 const SectionTitle = styled.h2`
   font-size: 1.25rem;
   font-weight: 600;
-  color: #333;
+  color: #1c1917;
   margin: 0;
 `;
 
@@ -76,7 +80,7 @@ const SectionIcon = styled.div`
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #047857;
   border-radius: 8px;
   color: white;
 `;
@@ -97,24 +101,24 @@ const StatsContainer = styled.div`
 `;
 
 const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(4, 120, 87, 0.1);
   border-radius: 12px;
   padding: 1.5rem;
   text-align: center;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(4, 120, 87, 0.2);
 `;
 
 const StatValue = styled.div`
   font-size: 2rem;
   font-weight: bold;
-  color: #333;
+  color: #047857;
   margin-bottom: 0.5rem;
 `;
 
 const StatLabel = styled.div`
-  color: #666;
+  color: #44403c;
   font-size: 0.9rem;
+  font-weight: 500;
 `;
 
 const LoadingState = styled.div`
@@ -122,7 +126,7 @@ const LoadingState = styled.div`
   justify-content: center;
   align-items: center;
   padding: 4rem;
-  color: white;
+  color: #44403c;
   font-size: 1.1rem;
 `;
 
@@ -131,7 +135,7 @@ const ErrorState = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 4rem;
-  color: white;
+  color: #44403c;
   text-align: center;
 `;
 
