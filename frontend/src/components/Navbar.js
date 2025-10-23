@@ -1,91 +1,59 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import styled from 'styled-components';
 import { Upload, Search, Database, Network } from 'lucide-react';
-
-const NavContainer = styled.nav`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: #292524;
-  backdrop-filter: blur(10px);
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  border-bottom: 1px solid rgba(4, 120, 87, 0.2);
-`;
-
-const Logo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.025em;
-`;
-
-const NavLinks = styled.div`
-  display: flex;
-  gap: 2rem;
-`;
-
-const NavLink = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  text-decoration: none;
-  color: ${props => props.active ? '#ffffff' : '#d6d3d1'};
-  background: ${props => props.active ? '#047857' : 'transparent'};
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  font-weight: 600;
-
-  &:hover {
-    background: ${props => props.active ? '#065f46' : 'rgba(4, 120, 87, 0.15)'};
-    color: ${props => props.active ? '#ffffff' : '#10b981'};
-    transform: translateY(-1px);
-  }
-`;
 
 const Navbar = () => {
   const location = useLocation();
 
+  const isActive = (path) => {
+    if (path === '/navigate') {
+      return location.pathname.startsWith('/navigate');
+    }
+    return location.pathname === path;
+  };
+
   return (
-    <NavContainer>
-      <Logo>
+    <nav className="fixed top-0 left-0 right-0 bg-stone-800 backdrop-blur-md px-8 py-4 flex justify-between items-center shadow-lg z-[1000] border-b border-emerald-700/20">
+      <div className="flex items-center gap-2 text-2xl font-bold text-white tracking-tight">
         <Database size={24} />
         Agentic Insight
-      </Logo>
-      <NavLinks>
-        <NavLink 
+      </div>
+      <div className="flex gap-8">
+        <Link 
           to="/import" 
-          active={location.pathname === '/import' ? 1 : 0}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg no-underline font-semibold transition-all ${
+            isActive('/import')
+              ? 'text-white bg-emerald-700 hover:bg-emerald-800'
+              : 'text-stone-300 bg-transparent hover:bg-emerald-700/15 hover:text-emerald-500 hover:-translate-y-0.5'
+          }`}
         >
           <Upload size={18} />
           Import Data
-        </NavLink>
-        <NavLink 
+        </Link>
+        <Link 
           to="/query" 
-          active={location.pathname === '/query' ? 1 : 0}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg no-underline font-semibold transition-all ${
+            isActive('/query')
+              ? 'text-white bg-emerald-700 hover:bg-emerald-800'
+              : 'text-stone-300 bg-transparent hover:bg-emerald-700/15 hover:text-emerald-500 hover:-translate-y-0.5'
+          }`}
         >
           <Search size={18} />
           Query Data
-        </NavLink>
-        <NavLink 
+        </Link>
+        <Link 
           to="/navigate" 
-          active={location.pathname.startsWith('/navigate') ? 1 : 0}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg no-underline font-semibold transition-all ${
+            isActive('/navigate')
+              ? 'text-white bg-emerald-700 hover:bg-emerald-800'
+              : 'text-stone-300 bg-transparent hover:bg-emerald-700/15 hover:text-emerald-500 hover:-translate-y-0.5'
+          }`}
         >
           <Network size={18} />
           Navigate
-        </NavLink>
-      </NavLinks>
-    </NavContainer>
+        </Link>
+      </div>
+    </nav>
   );
 };
 
