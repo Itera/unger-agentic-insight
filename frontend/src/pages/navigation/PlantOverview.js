@@ -1,165 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { Factory, MapPin, Activity, AlertCircle, ChevronRight } from 'lucide-react';
+import { Factory, Activity, AlertCircle } from 'lucide-react';
 import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
+import { Button } from '../../components/ui/button';
 
-const OverviewContainer = styled.div`
-  width: 100%;
-`;
-
-const Header = styled.div`
-  text-align: center;
-  margin-bottom: 3rem;
-`;
-
-const Title = styled.h1`
-  font-size: 2.5rem;
-  color: #1c1917;
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-`;
-
-const Subtitle = styled.p`
-  color: #78716c;
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-`;
-
-const PlantsContainer = styled.div`
-  margin-bottom: 3rem;
-`;
-
-const PlantSection = styled.div`
-  margin-bottom: 3rem;
-`;
-
-const PlantTitle = styled.h2`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: #1c1917;
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e7e5e4;
-`;
-
-const AreasGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1rem;
-`;
-
-const AreaCard = styled.div`
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e7e5e4;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-    border-color: #047857;
-  }
-
-  &:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #047857;
-  }
-`;
-
-const AreaHeader = styled.div`
-  display: flex;
-  justify-content: between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const AreaTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1c1917;
-  margin-bottom: 0.5rem;
-  flex: 1;
-`;
-
-const AreaIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #047857;
-  border-radius: 8px;
-  color: white;
-  margin-left: 1rem;
-`;
-
-const AreaStats = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #78716c;
-  font-size: 0.9rem;
-`;
-
-const AreaDescription = styled.p`
-  color: #44403c;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin-bottom: 1rem;
-`;
-
-const ActionButton = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #047857;
-  font-weight: 600;
-  font-size: 0.9rem;
-`;
-
-const LoadingState = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem;
-  color: #44403c;
-  font-size: 1.1rem;
-`;
-
-const ErrorState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4rem;
-  color: #44403c;
-  text-align: center;
-`;
 
 const PlantOverview = () => {
   const navigate = useNavigate();
@@ -214,66 +60,55 @@ const PlantOverview = () => {
 
   if (loading) {
     return (
-      <LoadingState>
-        <Activity className="animate-spin" size={24} style={{ marginRight: '0.5rem' }} />
+      <div className="flex justify-center items-center p-16 text-stone-700 text-lg">
+        <Activity className="animate-spin mr-2" size={24} />
         Loading factory data...
-      </LoadingState>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <ErrorState>
-        <AlertCircle size={48} style={{ marginBottom: '1rem' }} />
-        <h3>Failed to load factory data</h3>
-        <p>{error}</p>
-        <button 
-          onClick={loadPlantsAndAreas}
-          style={{
-            marginTop: '1rem',
-            padding: '0.5rem 1rem',
-            background: '#047857',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#ffffff',
-            cursor: 'pointer'
-          }}
-        >
+      <div className="flex flex-col items-center p-16 text-stone-700 text-center">
+        <AlertCircle size={48} className="mb-4" />
+        <h3 className="text-xl font-semibold mb-2">Failed to load factory data</h3>
+        <p className="mb-4">{error}</p>
+        <Button onClick={loadPlantsAndAreas}>
           Retry
-        </button>
-      </ErrorState>
+        </Button>
+      </div>
     );
   }
 
   return (
-    <OverviewContainer>
+    <div className="w-full">
       <Breadcrumb 
         items={[
           { label: 'Plants', path: '/navigate', isActive: true }
         ]} 
       />
       
-      <Header>
-        <Title>Factory Navigation</Title>
-        <Subtitle>
+      <div className="text-center mb-12">
+        <h1 className="text-4xl text-stone-900 mb-2 font-bold tracking-tight">Factory Navigation</h1>
+        <p className="text-stone-500 text-lg mb-8">
           Explore your industrial assets through an interactive plant and area overview
-        </Subtitle>
-      </Header>
+        </p>
+      </div>
 
-      <PlantsContainer>
+      <div className="mb-12">
         {plants.map((plant) => (
-          <PlantSection key={plant.name}>
-            <PlantTitle>
+          <div key={plant.name} className="mb-12">
+            <div className="flex items-center gap-3 text-stone-900 text-2xl mb-6 p-4 bg-white rounded-xl shadow-sm border border-stone-200">
               <Factory size={24} />
-              {plant.name}
+              <span className="font-semibold">{plant.name}</span>
               {areas[plant.name] && (
-                <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: '#78716c' }}>
+                <span className="text-base font-normal text-stone-500">
                   ({areas[plant.name].length} areas)
                 </span>
               )}
-            </PlantTitle>
+            </div>
 
-            <AreasGrid>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-6 mt-4">
               {(areas[plant.name] || []).map((area, index) => (
                 <ExpandableEntityCard
                   key={area.id || area.name || index}
@@ -285,19 +120,19 @@ const PlantOverview = () => {
                   onNavigate={(entity, type, id) => handleAreaClick(entity)}
                 />
               ))}
-            </AreasGrid>
-          </PlantSection>
+            </div>
+          </div>
         ))}
-      </PlantsContainer>
+      </div>
 
       {plants.length === 0 && (
-        <ErrorState>
-          <Factory size={48} style={{ marginBottom: '1rem' }} />
-          <h3>No plants found</h3>
+        <div className="flex flex-col items-center p-16 text-stone-700 text-center">
+          <Factory size={48} className="mb-4" />
+          <h3 className="text-xl font-semibold mb-2">No plants found</h3>
           <p>No factory data available. Please check your graph database connection.</p>
-        </ErrorState>
+        </div>
       )}
-    </OverviewContainer>
+    </div>
   );
 };
 
