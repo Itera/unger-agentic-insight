@@ -5,9 +5,9 @@ import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 import WorkOrdersSection from '../../components/WorkOrdersSection';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
 
 // All components now use Tailwind and shadcn/ui - no styled-components needed
 
