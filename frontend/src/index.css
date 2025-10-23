@@ -1,44 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* CSS Variables for Nature-Inspired Professional Theme */
-:root {
-  /* Primary Colors - Forest Green */
-  --color-primary: #047857;
-  --color-primary-dark: #065f46;
-  --color-primary-light: #059669;
-  --color-primary-lighter: #10b981;
-  
-  /* Secondary Colors - Earth Tones */
-  --color-secondary: #78350f;
-  --color-secondary-light: #92400e;
-  
-  /* Success/Active States */
-  --color-success: #16a34a;
-  --color-success-dark: #15803d;
-  
-  /* Background Colors */
-  --color-bg-main: #fafaf9;
-  --color-bg-alt: #f5f5f4;
-  --color-bg-white: #ffffff;
-  
-  /* Text Colors */
-  --color-text-primary: #1c1917;
-  --color-text-secondary: #44403c;
-  --color-text-muted: #78716c;
-  
-  /* Border Colors */
-  --color-border: #e7e5e4;
-  --color-border-dark: #d6d3d1;
-  
-  /* Navigation */
-  --color-nav-bg: #292524;
-  --color-nav-text: #ffffff;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-xl: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 98%; /* #fafaf9 */
+    --foreground: 24 10% 10%; /* #1c1917 */
+    
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 24 10% 10%; /* #1c1917 */
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 10%;
+    
+    --primary: 160 84% 25%; /* #047857 forest green */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 28 100% 27%; /* #78350f earth brown */
+    --secondary-foreground: 0 0% 100%;
+    
+    --muted: 24 6% 97%; /* #f5f5f4 */
+    --muted-foreground: 25 5% 45%; /* #78716c */
+    
+    --accent: 160 84% 39%; /* #10b981 */
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 20 6% 90%; /* #e7e5e4 */
+    --input: 20 6% 90%;
+    --ring: 160 84% 25%;
+    
+    --radius: 0.75rem;
+  }
 }
 
 * {
