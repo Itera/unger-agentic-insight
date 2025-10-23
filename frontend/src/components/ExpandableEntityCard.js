@@ -3,17 +3,18 @@ import styled from 'styled-components';
 import { ChevronDown, ChevronUp, Settings, Activity, Cpu, Zap, Database, Play, Box, Info, Tag, Calendar, AlertCircle, MapPin } from 'lucide-react';
 
 const CardContainer = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: #ffffff;
+  border: 1px solid #e7e5e4;
   border-radius: 12px;
   padding: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 
   &:hover {
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #fafaf9;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
+    border-color: #047857;
   }
 `;
 
@@ -36,14 +37,14 @@ const EntityIcon = styled.div`
   flex-shrink: 0;
   background: ${props => {
     switch(props.type) {
-      case 'Equipment': return 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
-      case 'Sensor': return 'linear-gradient(135deg, #4ecdc4, #44a08d)';
-      case 'Equipment Sensors': return 'linear-gradient(135deg, #fd79a8, #e84393)';
-      case 'Area Sensors': return 'linear-gradient(135deg, #fdcb6e, #e17055)';
-      case 'AssetArea': return 'linear-gradient(135deg, #a29bfe, #6c5ce7)'; // Purple gradient for asset areas
-      case 'Tank': return 'linear-gradient(135deg, #45b7d1, #2980b9)';
-      case 'ProcessStep': return 'linear-gradient(135deg, #96ceb4, #27ae60)';
-      default: return 'linear-gradient(135deg, #667eea, #764ba2)';
+      case 'Equipment': return '#78350f';
+      case 'Sensor': return '#047857';
+      case 'Equipment Sensors': return '#059669';
+      case 'Area Sensors': return '#92400e';
+      case 'AssetArea': return '#065f46';
+      case 'Tank': return '#0891b2';
+      case 'ProcessStep': return '#16a34a';
+      default: return '#047857';
     }
   }};
 `;
@@ -57,14 +58,14 @@ const EntityInfo = styled.div`
 
 const EntityName = styled.h3`
   font-size: 1rem;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: #1c1917;
   margin: 0;
   line-height: 1.3;
 `;
 
 const EntityDescription = styled.p`
-  color: #666;
+  color: #78716c;
   font-size: 0.9rem;
   line-height: 1.4;
   margin: 0;
@@ -73,7 +74,7 @@ const EntityDescription = styled.p`
 const ExpandButton = styled.button`
   background: none;
   border: none;
-  color: #666;
+  color: #78716c;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -83,15 +84,15 @@ const ExpandButton = styled.button`
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #333;
+    background: rgba(4, 120, 87, 0.1);
+    color: #047857;
   }
 `;
 
 const ExpandedContent = styled.div`
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid #e7e5e4;
   animation: ${props => props.isExpanded ? 'expandIn' : 'expandOut'} 0.3s ease;
   
   @keyframes expandIn {
@@ -132,7 +133,7 @@ const DetailSection = styled.div`
 const DetailSectionTitle = styled.h4`
   font-size: 0.9rem;
   font-weight: 600;
-  color: #333;
+  color: #1c1917;
   margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
@@ -148,21 +149,21 @@ const PropertyGrid = styled.div`
 const PropertyItem = styled.div`
   display: flex;
   flex-direction: column;
-  background: #f8f9fa;
+  background: #f5f5f4;
   padding: 0.5rem;
   border-radius: 6px;
 `;
 
 const PropertyLabel = styled.span`
   font-size: 0.8rem;
-  color: #666;
+  color: #78716c;
   font-weight: 500;
   text-transform: capitalize;
 `;
 
 const PropertyValue = styled.span`
   font-size: 0.9rem;
-  color: #333;
+  color: #1c1917;
   word-break: break-word;
 `;
 
@@ -173,8 +174,8 @@ const MetaTagsContainer = styled.div`
 `;
 
 const MetaTag = styled.span`
-  background: #e9ecef;
-  color: #495057;
+  background: rgba(4, 120, 87, 0.1);
+  color: #065f46;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -187,16 +188,18 @@ const ActionButtons = styled.div`
 `;
 
 const ActionButton = styled.button`
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #047857;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
+    background: #065f46;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }

@@ -8,14 +8,15 @@ const NavContainer = styled.nav`
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: #292524;
   backdrop-filter: blur(10px);
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   z-index: 1000;
+  border-bottom: 1px solid rgba(4, 120, 87, 0.2);
 `;
 
 const Logo = styled.div`
@@ -23,8 +24,9 @@ const Logo = styled.div`
   align-items: center;
   gap: 0.5rem;
   font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.025em;
 `;
 
 const NavLinks = styled.div`
@@ -37,17 +39,17 @@ const NavLink = styled(Link)`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 50px;
+  border-radius: 8px;
   text-decoration: none;
-  color: ${props => props.active ? '#fff' : '#666'};
-  background: ${props => props.active ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent'};
-  transition: all 0.3s ease;
-  font-weight: 500;
+  color: ${props => props.active ? '#ffffff' : '#d6d3d1'};
+  background: ${props => props.active ? '#047857' : 'transparent'};
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
 
   &:hover {
-    background: ${props => props.active ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'rgba(102, 126, 234, 0.1)'};
-    color: ${props => props.active ? '#fff' : '#667eea'};
-    transform: translateY(-2px);
+    background: ${props => props.active ? '#065f46' : 'rgba(4, 120, 87, 0.15)'};
+    color: ${props => props.active ? '#ffffff' : '#10b981'};
+    transform: translateY(-1px);
   }
 `;
 

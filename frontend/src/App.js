@@ -9,8 +9,8 @@ import NavigationPage from './pages/navigation/NavigationPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: 'Arial', sans-serif;
+  background: #fafaf9;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 `;
 
 const ContentContainer = styled.div`

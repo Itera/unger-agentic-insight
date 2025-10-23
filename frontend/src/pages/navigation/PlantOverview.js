@@ -17,13 +17,14 @@ const Header = styled.div`
 
 const Title = styled.h1`
   font-size: 2.5rem;
-  color: white;
+  color: #1c1917;
   margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 700;
+  letter-spacing: -0.025em;
 `;
 
 const Subtitle = styled.p`
-  color: rgba(255, 255, 255, 0.8);
+  color: #78716c;
   font-size: 1.1rem;
   margin-bottom: 2rem;
 `;
@@ -40,13 +41,14 @@ const PlantTitle = styled.h2`
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: white;
+  color: #1c1917;
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: #ffffff;
   border-radius: 12px;
-  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
 `;
 
 const AreasGrid = styled.div`
@@ -57,21 +59,20 @@ const AreasGrid = styled.div`
 `;
 
 const AreaCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
+  background: #ffffff;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e7e5e4;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
   overflow: hidden;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
-    background: rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    border-color: #047857;
   }
 
   &:before {
@@ -80,8 +81,8 @@ const AreaCard = styled.div`
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 3px;
+    background: #047857;
   }
 `;
 
@@ -95,7 +96,7 @@ const AreaHeader = styled.div`
 const AreaTitle = styled.h3`
   font-size: 1.25rem;
   font-weight: 600;
-  color: #333;
+  color: #1c1917;
   margin-bottom: 0.5rem;
   flex: 1;
 `;
@@ -106,8 +107,8 @@ const AreaIcon = styled.div`
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
+  background: #047857;
+  border-radius: 8px;
   color: white;
   margin-left: 1rem;
 `;
@@ -122,12 +123,12 @@ const StatItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #666;
+  color: #78716c;
   font-size: 0.9rem;
 `;
 
 const AreaDescription = styled.p`
-  color: #666;
+  color: #44403c;
   font-size: 0.9rem;
   line-height: 1.4;
   margin-bottom: 1rem;
@@ -137,8 +138,8 @@ const ActionButton = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #667eea;
-  font-weight: 500;
+  color: #047857;
+  font-weight: 600;
   font-size: 0.9rem;
 `;
 
@@ -147,7 +148,7 @@ const LoadingState = styled.div`
   justify-content: center;
   align-items: center;
   padding: 4rem;
-  color: white;
+  color: #44403c;
   font-size: 1.1rem;
 `;
 
@@ -156,7 +157,7 @@ const ErrorState = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 4rem;
-  color: white;
+  color: #44403c;
   text-align: center;
 `;
 
@@ -231,10 +232,10 @@ const PlantOverview = () => {
           style={{
             marginTop: '1rem',
             padding: '0.5rem 1rem',
-            background: 'rgba(255,255,255,0.2)',
+            background: '#047857',
             border: 'none',
             borderRadius: '8px',
-            color: 'white',
+            color: '#ffffff',
             cursor: 'pointer'
           }}
         >
@@ -266,7 +267,7 @@ const PlantOverview = () => {
               <Factory size={24} />
               {plant.name}
               {areas[plant.name] && (
-                <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: 'rgba(255,255,255,0.8)' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: '#78716c' }}>
                   ({areas[plant.name].length} areas)
                 </span>
               )}
