@@ -9,7 +9,7 @@ import { Badge } from '../../components/ui/badge';
 
 const getEntityIconBg = (type) => {
   switch(type) {
-    case 'Equipment': return 'bg-amber-900';
+    case 'Equipment': return 'bg-[#F5A676]';
     case 'Sensor': return 'bg-emerald-700';
     case 'Tank': return 'bg-cyan-600';
     case 'ProcessStep': return 'bg-green-600';
