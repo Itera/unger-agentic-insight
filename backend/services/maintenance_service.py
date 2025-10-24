@@ -146,6 +146,13 @@ class MaintenanceAPIService:
             
             work_orders = []
             for item in data:
+                # Handle different possible field names with fallbacks
+                created_at = (item.get("createdAt") or 
+                             item.get("created_at") or 
+                             item.get("createDate") or 
+                             item.get("dateCreated") or 
+                             "")
+                
                 work_order = WorkOrder(
                     id=item["id"],
                     nr=item["nr"],
@@ -157,7 +164,7 @@ class MaintenanceAPIService:
                     status=item["status"],
                     from_date=item.get("from", item.get("from_date", "")),
                     to_date=item.get("to", item.get("to_date", "")),
-                    created_at=item["createdAt"],
+                    created_at=created_at,
                     finished_date=item.get("finishedDate"),
                     priority=item["priority"],
                     url=item.get("url", ""),
@@ -169,6 +176,12 @@ class MaintenanceAPIService:
             
         except requests.RequestException as e:
             logger.error(f"Failed to get work orders for asset {asset_id}: {e}")
+            return []
+        except KeyError as e:
+            logger.error(f"Missing expected field in work orders response for asset {asset_id}: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Unexpected error getting work orders for asset {asset_id}: {e}")
             return []
     
     def get_work_orders_by_sensor(self, sensor_name: str) -> List[WorkOrder]:
