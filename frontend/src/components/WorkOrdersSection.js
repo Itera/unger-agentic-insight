@@ -112,7 +112,7 @@ const WorkOrdersSection = ({ entityType, entityName, areaName }) => {
       <Card>
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-orange-600 rounded-lg text-white">
+            <div className="flex items-center justify-center w-10 h-10 bg-lime-600 rounded-lg text-white">
               <Wrench />
             </div>
             <CardTitle>Work Orders</CardTitle>
@@ -133,7 +133,7 @@ const WorkOrdersSection = ({ entityType, entityName, areaName }) => {
       <Card>
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-orange-600 rounded-lg text-white">
+            <div className="flex items-center justify-center w-10 h-10 bg-lime-600 rounded-lg text-white">
               <Wrench />
             </div>
             <CardTitle>Work Orders</CardTitle>
@@ -154,7 +154,7 @@ const WorkOrdersSection = ({ entityType, entityName, areaName }) => {
       <Card>
         <CardHeader className="border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-orange-600 rounded-lg text-white">
+            <div className="flex items-center justify-center w-10 h-10 bg-lime-600 rounded-lg text-white">
               <Wrench />
             </div>
             <CardTitle>Work Orders</CardTitle>
@@ -177,7 +177,7 @@ const WorkOrdersSection = ({ entityType, entityName, areaName }) => {
     <Card>
       <CardHeader className="border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-orange-600 rounded-lg text-white">
+          <div className="flex items-center justify-center w-10 h-10 bg-lime-600 rounded-lg text-white">
             <Wrench />
           </div>
           <CardTitle>Work Orders ({workOrders.length})</CardTitle>

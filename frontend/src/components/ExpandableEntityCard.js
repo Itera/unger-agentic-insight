@@ -10,7 +10,7 @@ const getEntityIconBg = (type) => {
     case 'Sensor': return 'bg-emerald-700'; // Green for sensors
     case 'Equipment Sensors': return 'bg-emerald-600'; // Green for equipment sensors
     case 'Area Sensors': return 'bg-blue-600'; // Blue for area sensors
-    case 'AssetArea': return 'bg-amber-700'; // Brown for areas
+    case 'AssetArea': return 'bg-sky-500'; // Light blue for areas
     case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
     case 'ProcessStep': return 'bg-green-600'; // Green for process steps
     default: return 'bg-stone-600'; // Grey default
