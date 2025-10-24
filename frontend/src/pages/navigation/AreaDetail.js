@@ -11,6 +11,19 @@ import { Badge } from '../../components/ui/badge';
 
 // All components now use Tailwind and shadcn/ui - no styled-components needed
 
+const getEntityIconBg = (type) => {
+  switch(type) {
+    case 'Equipment': return 'bg-orange-600'; // Orange for equipment
+    case 'Sensor': return 'bg-emerald-700'; // Green for sensors
+    case 'Equipment Sensors': return 'bg-emerald-600'; // Green for equipment sensors
+    case 'Area Sensors': return 'bg-blue-600'; // Blue for area sensors
+    case 'AssetArea': return 'bg-purple-600'; // Purple for areas
+    case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
+    case 'ProcessStep': return 'bg-green-600'; // Green for process steps
+    default: return 'bg-stone-600'; // Grey default
+  }
+};
+
 const AreaDetail = () => {
   const { areaId } = useParams();
   const navigate = useNavigate();
@@ -302,12 +315,12 @@ const AreaDetail = () => {
             <Card key={entityType}>
               <CardHeader className="border-b border-border">
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg text-white">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-lg text-white ${getEntityIconBg(entityType)}`}>
                     {getEntityIcon(entityType)}
                   </div>
                   <CardTitle className="text-xl">
                     {entityType} 
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="outline" className="ml-2">
                       {entities.length}
                     </Badge>
                   </CardTitle>

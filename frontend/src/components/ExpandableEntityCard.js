@@ -6,14 +6,14 @@ import { Badge } from './ui/badge';
 
 const getEntityIconBg = (type) => {
   switch(type) {
-    case 'Equipment': return 'bg-[#F5A676]';
-    case 'Sensor': return 'bg-emerald-700';
-    case 'Equipment Sensors': return 'bg-emerald-600';
-    case 'Area Sensors': return 'bg-[#F5A676]';
-    case 'AssetArea': return 'bg-emerald-800';
-    case 'Tank': return 'bg-cyan-600';
-    case 'ProcessStep': return 'bg-green-600';
-    default: return 'bg-emerald-700';
+    case 'Equipment': return 'bg-orange-600'; // Orange for equipment
+    case 'Sensor': return 'bg-emerald-700'; // Green for sensors
+    case 'Equipment Sensors': return 'bg-emerald-600'; // Green for equipment sensors
+    case 'Area Sensors': return 'bg-blue-600'; // Blue for area sensors
+    case 'AssetArea': return 'bg-purple-600'; // Purple for areas
+    case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
+    case 'ProcessStep': return 'bg-green-600'; // Green for process steps
+    default: return 'bg-stone-600'; // Grey default
   }
 };
 

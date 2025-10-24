@@ -9,12 +9,12 @@ import { Badge } from '../../components/ui/badge';
 
 const getEntityIconBg = (type) => {
   switch(type) {
-    case 'Equipment': return 'bg-[#F5A676]';
-    case 'Sensor': return 'bg-emerald-700';
-    case 'Tank': return 'bg-cyan-600';
-    case 'ProcessStep': return 'bg-green-600';
-    case 'AssetArea': return 'bg-rose-600';
-    default: return 'bg-emerald-700';
+    case 'Equipment': return 'bg-orange-600'; // Orange for equipment
+    case 'Sensor': return 'bg-emerald-700'; // Green for sensors
+    case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
+    case 'ProcessStep': return 'bg-green-600'; // Green for process steps
+    case 'AssetArea': return 'bg-purple-600'; // Purple for areas
+    default: return 'bg-stone-600'; // Grey default
   }
 };
 
@@ -273,7 +273,7 @@ const EntityDetail = () => {
                   <div className={`flex items-center justify-center w-10 h-10 rounded-lg text-white ${getEntityIconBg(connectedType)}`}>
                     {getEntityIcon(connectedType)}
                   </div>
-                  <CardTitle>Connected {connectedType} <Badge variant="secondary" className="ml-2">{entities.length}</Badge></CardTitle>
+                  <CardTitle>Connected {connectedType} <Badge variant="outline" className="ml-2">{entities.length}</Badge></CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="pt-6">

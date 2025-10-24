@@ -22,13 +22,13 @@ module.exports = {
           900: '#064e3b',
         },
         secondary: {
-          DEFAULT: '#F5A676', // Peach/coral
+          DEFAULT: '#78350f', // Earth brown  
           50: '#fef3c7',
           100: '#fde68a',
           200: '#fcd34d',
           300: '#fbbf24',
           400: '#f59e0b',
-          500: '#F5A676',
+          500: '#d97706',
           600: '#b45309',
           700: '#92400e',
           800: '#78350f',
