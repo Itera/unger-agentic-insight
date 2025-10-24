@@ -22,17 +22,17 @@ module.exports = {
           900: '#064e3b',
         },
         secondary: {
-          DEFAULT: '#78350f', // Earth brown  
-          50: '#fef3c7',
-          100: '#fde68a',
-          200: '#fcd34d',
-          300: '#fbbf24',
-          400: '#f59e0b',
-          500: '#d97706',
-          600: '#b45309',
-          700: '#92400e',
-          800: '#78350f',
-          900: '#451a03',
+          DEFAULT: '#fef3e0', // Light cream  
+          50: '#fffef5',
+          100: '#fef9e7',
+          200: '#fef3e0',
+          300: '#fde68a',
+          400: '#fcd34d',
+          500: '#fbbf24',
+          600: '#f59e0b',
+          700: '#d97706',
+          800: '#b45309',
+          900: '#92400e',
         },
         stone: {
           DEFAULT: '#fafaf9',
