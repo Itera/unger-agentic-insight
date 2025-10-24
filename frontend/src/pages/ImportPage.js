@@ -1,137 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import styled from 'styled-components';
 import axios from 'axios';
 import { Upload, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-
-const PageContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
-
-const Title = styled.h1`
-  color: white;
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-`;
-
-const Card = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-`;
-
-const DropzoneContainer = styled.div`
-  border: 3px dashed ${props => props.isDragActive ? '#667eea' : '#ccc'};
-  border-radius: 15px;
-  padding: 3rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: ${props => props.isDragActive ? 'rgba(102, 126, 234, 0.1)' : 'transparent'};
-
-  &:hover {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.05);
-  }
-`;
-
-const DropzoneText = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  color: #666;
-  font-size: 1.1rem;
-`;
-
-const FileList = styled.div`
-  margin-top: 2rem;
-`;
-
-const FileItem = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  margin: 0.5rem 0;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 10px;
-  border-left: 4px solid #667eea;
-`;
-
-const FileInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const StatusIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: ${props => {
-    switch (props.status) {
-      case 'success': return '#22c55e';
-      case 'error': return '#ef4444';
-      case 'uploading': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  }};
-`;
-
-const Button = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 25px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
-`;
-
-const StatCard = styled.div`
-  background: rgba(102, 126, 234, 0.1);
-  padding: 1.5rem;
-  border-radius: 15px;
-  text-align: center;
-`;
-
-const StatNumber = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #667eea;
-`;
-
-const StatLabel = styled.div`
-  color: #666;
-  margin-top: 0.5rem;
-`;
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
 
 const ImportPage = () => {
   const [files, setFiles] = useState([]);
@@ -234,80 +106,110 @@ const ImportPage = () => {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'success':
+        return 'text-green-600';
+      case 'error':
+        return 'text-red-600';
+      case 'uploading':
+        return 'text-amber-600';
+      default:
+        return 'text-stone-500';
+    }
+  };
+
   return (
-    <PageContainer>
-      <Title>Import Industrial Data</Title>
+    <div className="max-w-6xl mx-auto p-8">
+      <h1 className="text-4xl font-bold text-stone-900 text-center mb-12 tracking-tight">
+        Import Industrial Data
+      </h1>
       
       <Card>
-        <DropzoneContainer {...getRootProps()} isDragActive={isDragActive}>
-          <input {...getInputProps()} />
-          <DropzoneText>
-            <Upload size={48} color="#667eea" />
-            {isDragActive ? (
-              <p>Drop the CSV files here...</p>
-            ) : (
-              <>
-                <p>Drag & drop CSV files here, or click to select files</p>
-                <p style={{fontSize: '0.9rem', opacity: 0.7}}>
-                  Supported formats: HMI sensor data, Tag configurations, Itera measurements
-                </p>
-              </>
-            )}
-          </DropzoneText>
-        </DropzoneContainer>
+        <CardContent className="pt-6">
+          <div 
+            {...getRootProps()} 
+            className={`border-3 border-dashed rounded-xl p-12 text-center cursor-pointer transition-all ${
+              isDragActive 
+                ? 'border-primary-700 bg-primary-50' 
+                : 'border-stone-300 hover:border-primary-700 hover:bg-primary-50/50'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <div className="flex flex-col items-center gap-4 text-stone-700 text-lg">
+              <Upload size={48} className="text-primary-700" />
+              {isDragActive ? (
+                <p>Drop the CSV files here...</p>
+              ) : (
+                <>
+                  <p>Drag & drop CSV files here, or click to select files</p>
+                  <p className="text-sm opacity-70">
+                    Supported formats: HMI sensor data, Tag configurations, Itera measurements
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
 
-        {files.length > 0 && (
-          <FileList>
-            <h3>Selected Files</h3>
-            {files.map((fileItem) => (
-              <FileItem key={fileItem.id}>
-                <FileInfo>
-                  <FileText size={20} color="#667eea" />
-                  <div>
-                    <div style={{fontWeight: '600'}}>{fileItem.name}</div>
-                    <div style={{fontSize: '0.9rem', color: '#666'}}>
-                      {(fileItem.size / 1024).toFixed(1)} KB
+          {files.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-stone-800 mb-4">Selected Files</h3>
+              {files.map((fileItem) => (
+                <div 
+                  key={fileItem.id} 
+                  className="flex items-center justify-between p-4 my-2 bg-primary-50 rounded-lg border-l-4 border-primary-700"
+                >
+                  <div className="flex items-center gap-4">
+                    <FileText size={20} className="text-primary-700" />
+                    <div>
+                      <div className="font-semibold text-stone-900">{fileItem.name}</div>
+                      <div className="text-sm text-stone-600">
+                        {(fileItem.size / 1024).toFixed(1)} KB
+                      </div>
                     </div>
                   </div>
-                </FileInfo>
-                <StatusIndicator status={uploadStatus[fileItem.id]}>
-                  {getStatusIcon(uploadStatus[fileItem.id])}
-                  {getStatusText(uploadStatus[fileItem.id])}
-                </StatusIndicator>
-              </FileItem>
-            ))}
-            
-            <Button 
-              onClick={uploadAllFiles}
-              disabled={files.every(f => uploadStatus[f.id] === 'success')}
-            >
-              Upload All Files
-            </Button>
-          </FileList>
-        )}
+                  <div className={`flex items-center gap-2 ${getStatusColor(uploadStatus[fileItem.id])}`}>
+                    {getStatusIcon(uploadStatus[fileItem.id])}
+                    <span className="font-medium">{getStatusText(uploadStatus[fileItem.id])}</span>
+                  </div>
+                </div>
+              ))}
+              
+              <Button 
+                onClick={uploadAllFiles}
+                disabled={files.every(f => uploadStatus[f.id] === 'success')}
+                className="mt-4 bg-primary-700 hover:bg-primary-800 text-white font-semibold"
+              >
+                Upload All Files
+              </Button>
+            </div>
+          )}
 
-        {importStats && (
-          <StatsContainer>
-            <StatCard>
-              <StatNumber>{importStats.imports?.length || 0}</StatNumber>
-              <StatLabel>Total Imports</StatLabel>
-            </StatCard>
-            <StatCard>
-              <StatNumber>
-                {importStats.imports?.reduce((sum, imp) => sum + (imp.rows_imported || 0), 0) || 0}
-              </StatNumber>
-              <StatLabel>Total Rows</StatLabel>
-            </StatCard>
-            <StatCard>
-              <StatNumber>
-                {importStats.imports?.filter(imp => imp.import_status === 'success').length || 0}
-              </StatNumber>
-              <StatLabel>Successful Imports</StatLabel>
-            </StatCard>
-          </StatsContainer>
-        )}
+          {importStats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+              <div className="bg-primary-50 p-6 rounded-xl text-center border border-primary-200">
+                <div className="text-3xl font-bold text-primary-700">
+                  {importStats.imports?.length || 0}
+                </div>
+                <div className="text-stone-700 mt-2 font-medium">Total Imports</div>
+              </div>
+              <div className="bg-primary-50 p-6 rounded-xl text-center border border-primary-200">
+                <div className="text-3xl font-bold text-primary-700">
+                  {importStats.imports?.reduce((sum, imp) => sum + (imp.rows_imported || 0), 0) || 0}
+                </div>
+                <div className="text-stone-700 mt-2 font-medium">Total Rows</div>
+              </div>
+              <div className="bg-primary-50 p-6 rounded-xl text-center border border-primary-200">
+                <div className="text-3xl font-bold text-primary-700">
+                  {importStats.imports?.filter(imp => imp.import_status === 'success').length || 0}
+                </div>
+                <div className="text-stone-700 mt-2 font-medium">Successful Imports</div>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
-    </PageContainer>
+    </div>
   );
 };
 

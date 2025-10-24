@@ -1,208 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import styled from 'styled-components';
 import { Send, Brain, Clock, Database, BarChart3, MapPin, Target } from 'lucide-react';
 import { useNavigationContext } from '../contexts/NavigationContext';
 import ContextVisualization from '../components/ContextVisualization';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-
-const PageContainer = styled.div`
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
-
-const Title = styled.h1`
-  color: white;
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-`;
-
-const QuerySection = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-`;
-
-const InputContainer = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const QueryInput = styled.textarea`
-  flex: 1;
-  padding: 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 15px;
-  font-size: 1rem;
-  resize: vertical;
-  min-height: 100px;
-  transition: border-color 0.3s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-  }
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-`;
-
-const SendButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 15px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: 100px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-`;
-
-const OptionsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  margin-bottom: 1rem;
-`;
-
-const ToggleContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const Toggle = styled.input`
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-`;
-
-const ToggleLabel = styled.label`
-  color: #666;
-  font-weight: 500;
-  cursor: pointer;
-`;
-
-const ResponseSection = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  margin-bottom: 2rem;
-`;
-
-const ResponseHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #f3f4f6;
-`;
-
-const ResponseText = styled.div`
-  line-height: 1.6;
-  color: #374151;
-  white-space: pre-wrap;
-  margin-bottom: 1rem;
-`;
-
-const DataVisualization = styled.div`
-  background: #f9fafb;
-  border-radius: 15px;
-  padding: 1.5rem;
-  margin-top: 1rem;
-`;
-
-const DataTable = styled.div`
-  overflow-x: auto;
-  margin-top: 1rem;
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const TableHeader = styled.th`
-  background: #667eea;
-  color: white;
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-`;
-
-const TableCell = styled.td`
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e5e7eb;
-`;
-
-const TableRow = styled.tr`
-  &:nth-child(even) {
-    background: #f9fafb;
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: #667eea;
-`;
-
-const ExampleQueries = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-`;
-
-const ExampleButton = styled.button`
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid #667eea;
-  color: #667eea;
-  padding: 0.75rem 1rem;
-  border-radius: 25px;
-  cursor: pointer;
-  margin: 0.5rem;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-
-  &:hover {
-    background: #667eea;
-    color: white;
-  }
-`;
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Checkbox } from '../components/ui/checkbox';
+import { Label } from '../components/ui/label';
 
 const QueryPage = () => {
   const { getChatContext, hasActiveContext, getContextSummary, chatMode, toggleChatMode } = useNavigationContext();
@@ -310,8 +115,8 @@ const QueryPage = () => {
       }));
 
       return (
-        <DataVisualization>
-          <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Data Visualization</h4>
+        <div className="bg-stone-100 rounded-lg p-6 mt-4 border border-stone-200">
+          <h4 className="mb-4 text-stone-800 font-semibold">Data Visualization</h4>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -323,13 +128,13 @@ const QueryPage = () => {
                   key={key} 
                   type="monotone" 
                   dataKey={key} 
-                  stroke={['#667eea', '#22c55e', '#f59e0b'][index]} 
+                  stroke={['#047857', '#10b981', '#f59e0b'][index]} 
                   strokeWidth={2}
                 />
               ))}
             </LineChart>
           </ResponsiveContainer>
-        </DataVisualization>
+        </div>
       );
     }
 
@@ -337,8 +142,10 @@ const QueryPage = () => {
   };
 
   return (
-    <PageContainer>
-      <Title>AI-Powered Industrial Insights</Title>
+    <div className="max-w-7xl mx-auto p-8">
+      <h1 className="text-4xl font-bold text-stone-900 text-center mb-12 tracking-tight">
+        AI-Powered Industrial Insights
+      </h1>
       
       {/* Context Visualization */}
       <ContextVisualization 
@@ -348,150 +155,162 @@ const QueryPage = () => {
         isVisible={true}
       />
       
-      <QuerySection>
-        <InputContainer>
-          <QueryInput
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me anything about your industrial data... 
-Examples:
-• What are the temperature trends for zone 75-12?
-• Show me sensors with quality issues
-• Analyze tank levels over the last 24 hours
-• Which equipment needs maintenance attention?"
-          />
-          <SendButton 
-            onClick={handleSubmit} 
-            disabled={loading || !query.trim()}
-          >
-            {loading ? (
-              <>
-                <Brain className="animate-spin" size={20} />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Send size={20} />
-                Ask AI
-              </>
-            )}
-          </SendButton>
-        </InputContainer>
+      <Card className="mb-8">
+        <CardContent className="pt-6">
+          <div className="flex gap-4 mb-4">
+            <textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask me anything about your industrial data... \nExamples:\n• What are the temperature trends for zone 75-12?\n• Show me sensors with quality issues\n• Analyze tank levels over the last 24 hours\n• Which equipment needs maintenance attention?"
+              className="flex-1 p-4 border-2 border-stone-200 rounded-lg text-base resize-vertical min-h-[100px] transition-all focus:outline-none focus:border-primary-700 focus:ring-2 focus:ring-primary-700/20 placeholder:text-stone-500"
+            />
+            <Button 
+              onClick={handleSubmit} 
+              disabled={loading || !query.trim()}
+              className="bg-primary-700 hover:bg-primary-800 text-white font-semibold min-h-[100px] px-8 flex flex-col items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Brain className="animate-spin" size={20} />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Send size={20} />
+                  <span>Ask AI</span>
+                </>
+              )}
+            </Button>
+          </div>
 
-        <OptionsContainer>
-          <ToggleContainer>
-            <Toggle
-              type="checkbox"
-              id="useAdx"
-              checked={useAdx}
-              onChange={(e) => setUseAdx(e.target.checked)}
-            />
-            <ToggleLabel htmlFor="useAdx">
-              Use Azure Data Explorer (when configured)
-            </ToggleLabel>
-          </ToggleContainer>
-          
-          {/* Context Mode Toggle */}
-          <ToggleContainer>
-            <Toggle
-              type="checkbox"
-              id="chatMode"
-              checked={chatMode === 'scoped'}
-              onChange={toggleChatMode}
-            />
-            <ToggleLabel htmlFor="chatMode">
-              Scoped Chat Mode
-            </ToggleLabel>
-          </ToggleContainer>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.9rem' }}>
-            <div style={{ color: '#666' }}>
-              {useAdx ? <Database size={16} /> : <BarChart3 size={16} />}
-              {useAdx ? ' ADX Mode' : ' Local Database Mode'}
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="useAdx"
+                checked={useAdx}
+                onCheckedChange={setUseAdx}
+              />
+              <Label htmlFor="useAdx" className="text-stone-700 font-medium cursor-pointer">
+                Use Azure Data Explorer (when configured)
+              </Label>
             </div>
             
-            {/* Context Indicator */}
-            <div style={{ color: chatMode === 'scoped' && hasActiveContext ? '#667eea' : '#666' }}>
-              {chatMode === 'scoped' ? <Target size={16} /> : <MapPin size={16} />}
-              {chatMode === 'scoped' && hasActiveContext ? ` Scoped: ${getContextSummary()}` : 
-               chatMode === 'scoped' ? ' Scoped: No Context' : ' Global Mode'}
+            {/* Context Mode Toggle */}
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="chatMode"
+                checked={chatMode === 'scoped'}
+                onCheckedChange={toggleChatMode}
+              />
+              <Label htmlFor="chatMode" className="text-stone-700 font-medium cursor-pointer">
+                Scoped Chat Mode
+              </Label>
             </div>
-          </div>
-        </OptionsContainer>
-      </QuerySection>
-
-      {response && (
-        <ResponseSection>
-          <ResponseHeader>
-            <Brain size={24} color="#667eea" />
-            <div>
-              <h3 style={{ margin: 0, color: '#374151' }}>AI Analysis Result</h3>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', fontSize: '0.9rem', color: '#6b7280' }}>
+            
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2 text-stone-600">
+                {useAdx ? <Database size={16} /> : <BarChart3 size={16} />}
+                <span>{useAdx ? 'ADX Mode' : 'Local Database Mode'}</span>
+              </div>
+              
+              {/* Context Indicator */}
+              <div className={`flex items-center gap-2 ${
+                chatMode === 'scoped' && hasActiveContext ? 'text-primary-700' : 'text-stone-600'
+              }`}>
+                {chatMode === 'scoped' ? <Target size={16} /> : <MapPin size={16} />}
                 <span>
-                  <Clock size={14} style={{ marginRight: '0.25rem' }} />
-                  {new Date(response.timestamp).toLocaleString()}
+                  {chatMode === 'scoped' && hasActiveContext ? `Scoped: ${getContextSummary()}` : 
+                   chatMode === 'scoped' ? 'Scoped: No Context' : 'Global Mode'}
                 </span>
-                <span>Source: {response.source.toUpperCase()}</span>
               </div>
             </div>
-          </ResponseHeader>
+          </div>
+        </CardContent>
+      </Card>
 
-          <ResponseText>{response.response}</ResponseText>
+      {response && (
+        <Card className="mb-8">
+          <CardHeader className="border-b border-stone-200">
+            <div className="flex items-center gap-4">
+              <Brain size={24} className="text-primary-700" />
+              <div>
+                <CardTitle className="text-stone-800">AI Analysis Result</CardTitle>
+                <div className="flex items-center gap-4 mt-2 text-sm text-stone-500">
+                  <span className="flex items-center gap-1">
+                    <Clock size={14} />
+                    {new Date(response.timestamp).toLocaleString()}
+                  </span>
+                  <span>Source: {response.source.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="leading-relaxed text-stone-900 whitespace-pre-wrap mb-4">
+              {response.response}
+            </div>
 
-          {response.data && response.data.length > 0 && (
-            <>
-              {renderDataVisualization(response.data)}
-              
-              <DataTable>
-                <h4 style={{ marginBottom: '1rem', color: '#374151' }}>
-                  Query Results ({response.data.length} rows)
-                </h4>
-                <Table>
-                  <thead>
-                    <tr>
-                      {Object.keys(response.data[0]).map(key => (
-                        <TableHeader key={key}>{key}</TableHeader>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {response.data.slice(0, 50).map((row, index) => (
-                      <TableRow key={index}>
-                        {Object.values(row).map((value, cellIndex) => (
-                          <TableCell key={cellIndex}>
-                            {typeof value === 'number' ? value.toLocaleString() : String(value)}
-                          </TableCell>
+            {response.data && response.data.length > 0 && (
+              <>
+                {renderDataVisualization(response.data)}
+                
+                <div className="overflow-x-auto mt-4">
+                  <h4 className="mb-4 text-stone-800 font-semibold">
+                    Query Results ({response.data.length} rows)
+                  </h4>
+                  <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow">
+                    <thead>
+                      <tr>
+                        {Object.keys(response.data[0]).map(key => (
+                          <th key={key} className="bg-primary-700 text-white px-4 py-3 text-left font-semibold">
+                            {key}
+                          </th>
                         ))}
-                      </TableRow>
-                    ))}
-                  </tbody>
-                </Table>
-                {response.data.length > 50 && (
-                  <div style={{ marginTop: '1rem', color: '#6b7280', textAlign: 'center' }}>
-                    Showing first 50 rows of {response.data.length} total results
-                  </div>
-                )}
-              </DataTable>
-            </>
-          )}
-        </ResponseSection>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {response.data.slice(0, 50).map((row, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-stone-50'}>
+                          {Object.values(row).map((value, cellIndex) => (
+                            <td key={cellIndex} className="px-4 py-3 border-b border-stone-200 text-stone-700">
+                              {typeof value === 'number' ? value.toLocaleString() : String(value)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {response.data.length > 50 && (
+                    <div className="mt-4 text-stone-500 text-center">
+                      Showing first 50 rows of {response.data.length} total results
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
-      <ExampleQueries>
-        <h3 style={{ marginBottom: '1rem', color: '#374151' }}>Try These Example Queries</h3>
-        <div>
-          {exampleQueries.map((example, index) => (
-            <ExampleButton 
-              key={index}
-              onClick={() => setExampleQuery(example)}
-            >
-              {example}
-            </ExampleButton>
-          ))}
-        </div>
-      </ExampleQueries>
-    </PageContainer>
+      <Card>
+        <CardContent className="pt-6">
+          <h3 className="mb-4 text-stone-800 font-semibold">Try These Example Queries</h3>
+          <div className="flex flex-wrap gap-2">
+            {exampleQueries.map((example, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                onClick={() => setExampleQuery(example)}
+                className="bg-primary-50 border-primary-700 text-primary-800 hover:bg-primary-700 hover:text-white rounded-full transition-all"
+              >
+                {example}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

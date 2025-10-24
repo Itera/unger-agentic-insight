@@ -1,175 +1,15 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-import { Eye, EyeOff, Target, MapPin, Database, Activity, Settings, Zap, Box, ChevronDown, ChevronUp } from 'lucide-react';
+import { Eye, Target, MapPin, Database, Activity, Settings, Box, ChevronDown, ChevronUp } from 'lucide-react';
+import { Badge } from './ui/badge';
 
-const ContextContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  backdrop-filter: blur(10px);
-`;
-
-const ContextHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: ${props => props.expanded ? '1rem' : '0'};
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 8px;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(102, 126, 234, 0.05);
+const getNodeIconBg = (type) => {
+  switch(type) {
+    case 'AssetArea': return 'bg-purple-600';
+    case 'Equipment': return 'bg-red-600';
+    case 'Sensor': return 'bg-teal-600';
+    default: return 'bg-indigo-600';
   }
-`;
-
-const ContextTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  color: #333;
-`;
-
-const ContextSummary = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  color: #666;
-`;
-
-const ExpandButton = styled.button`
-  background: none;
-  border: none;
-  color: #667eea;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const ContextDetails = styled.div`
-  animation: fadeIn 0.3s ease;
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-`;
-
-const ScopeSection = styled.div`
-  margin-bottom: 1rem;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const SectionTitle = styled.h4`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 0.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const NodesList = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 0.5rem;
-`;
-
-const NodeItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  font-size: 0.85rem;
-`;
-
-const NodeIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  color: white;
-  flex-shrink: 0;
-  background: ${props => {
-    switch(props.type) {
-      case 'AssetArea': return 'linear-gradient(135deg, #a29bfe, #6c5ce7)';
-      case 'Equipment': return 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
-      case 'Sensor': return 'linear-gradient(135deg, #4ecdc4, #44a08d)';
-      default: return 'linear-gradient(135deg, #667eea, #764ba2)';
-    }
-  }};
-`;
-
-const NodeName = styled.span`
-  font-weight: 500;
-  color: #333;
-  flex: 1;
-`;
-
-const NodeType = styled.span`
-  color: #666;
-  font-size: 0.75rem;
-  background: #e9ecef;
-  padding: 0.125rem 0.25rem;
-  border-radius: 3px;
-`;
-
-const StatsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(102, 126, 234, 0.05);
-  border-radius: 8px;
-`;
-
-const StatItem = styled.div`
-  text-align: center;
-`;
-
-const StatValue = styled.div`
-  font-size: 1.25rem;
-  font-weight: bold;
-  color: #667eea;
-  margin-bottom: 0.25rem;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.75rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const ModeIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: ${props => props.scoped ? '#667eea' : '#666'};
-  font-weight: ${props => props.scoped ? '600' : 'normal'};
-`;
+};
 
 const ContextVisualization = ({ 
   context, 
@@ -215,19 +55,19 @@ const ContextVisualization = ({
     const labels = node.labels || [];
     
     return (
-      <ScopeSection>
-        <SectionTitle>
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
           <Target size={16} />
           Central Focus
-        </SectionTitle>
-        <NodeItem>
-          <NodeIcon type={labels[0]}>
+        </h4>
+        <div className="flex items-center gap-2 p-2 bg-stone-50 rounded-md text-sm">
+          <div className={`flex items-center justify-center w-5 h-5 rounded text-white shrink-0 ${getNodeIconBg(labels[0])}`}>
             {getNodeIcon(labels)}
-          </NodeIcon>
-          <NodeName>{node.name}</NodeName>
-          <NodeType>{labels.join(', ')}</NodeType>
-        </NodeItem>
-      </ScopeSection>
+          </div>
+          <span className="font-medium text-stone-900 flex-1">{node.name}</span>
+          <Badge variant="secondary" className="text-xs">{labels.join(', ')}</Badge>
+        </div>
+      </div>
     );
   };
 
@@ -245,23 +85,18 @@ const ContextVisualization = ({
     }, {});
 
     return (
-      <ScopeSection>
-        <SectionTitle>
+      <div className="mb-4">
+        <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
           <Database size={16} />
           Connected Entities ({contextData.connected_nodes.length})
-        </SectionTitle>
+        </h4>
         
         {Object.entries(nodesByType).map(([type, nodes]) => (
-          <div key={type} style={{ marginBottom: '1rem' }}>
-            <div style={{ 
-              fontSize: '0.8rem', 
-              color: '#666', 
-              marginBottom: '0.5rem',
-              fontWeight: '500'
-            }}>
+          <div key={type} className="mb-4">
+            <div className="text-xs text-stone-600 mb-2 font-medium">
               {type} ({nodes.length})
             </div>
-            <NodesList>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-2">
               {nodes.slice(0, 6).map((node, index) => {
                 const getDisplayName = (node) => {
                   return node.name || node.properties?.equipment_name || node.properties?.tag || 'Unnamed';
@@ -278,29 +113,24 @@ const ContextVisualization = ({
                 };
                 
                 return (
-                  <NodeItem key={index}>
-                    <NodeIcon type={type}>
+                  <div key={index} className="flex items-center gap-2 p-2 bg-stone-50 rounded-md text-sm">
+                    <div className={`flex items-center justify-center w-5 h-5 rounded text-white shrink-0 ${getNodeIconBg(type)}`}>
                       {getNodeIcon(node.labels)}
-                    </NodeIcon>
-                    <NodeName>{getDisplayName(node)}</NodeName>
-                    <NodeType>{getDisplayInfo(node)}</NodeType>
-                  </NodeItem>
+                    </div>
+                    <span className="font-medium text-stone-900 flex-1">{getDisplayName(node)}</span>
+                    <Badge variant="secondary" className="text-xs">{getDisplayInfo(node)}</Badge>
+                  </div>
                 );
               })}
-            </NodesList>
+            </div>
             {nodes.length > 6 && (
-              <div style={{ 
-                fontSize: '0.75rem', 
-                color: '#666', 
-                marginTop: '0.5rem',
-                textAlign: 'center'
-              }}>
+              <div className="text-xs text-stone-600 mt-2 text-center">
                 ... and {nodes.length - 6} more {type.toLowerCase()} entities
               </div>
             )}
           </div>
         ))}
-      </ScopeSection>
+      </div>
     );
   };
 
@@ -308,56 +138,59 @@ const ContextVisualization = ({
     if (!contextData) return null;
 
     return (
-      <StatsGrid>
-        <StatItem>
-          <StatValue>{contextData.total_nodes || 0}</StatValue>
-          <StatLabel>Total Nodes</StatLabel>
-        </StatItem>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 mt-4 p-4 bg-indigo-50 rounded-lg">
+        <div className="text-center">
+          <div className="text-xl font-bold text-indigo-600 mb-1">{contextData.total_nodes || 0}</div>
+          <div className="text-xs text-stone-600 uppercase tracking-wide">Total Nodes</div>
+        </div>
         
-        <StatItem>
-          <StatValue>{context?.scopeDepth || 2}</StatValue>
-          <StatLabel>Scope Depth</StatLabel>
-        </StatItem>
+        <div className="text-center">
+          <div className="text-xl font-bold text-indigo-600 mb-1">{context?.scopeDepth || 2}</div>
+          <div className="text-xs text-stone-600 uppercase tracking-wide">Scope Depth</div>
+        </div>
         
-        <StatItem>
-          <StatValue>{contextData.connected_nodes?.length || 0}</StatValue>
-          <StatLabel>Connections</StatLabel>
-        </StatItem>
+        <div className="text-center">
+          <div className="text-xl font-bold text-indigo-600 mb-1">{contextData.connected_nodes?.length || 0}</div>
+          <div className="text-xs text-stone-600 uppercase tracking-wide">Connections</div>
+        </div>
         
-        <StatItem>
-          <StatValue>{mode === 'scoped' ? 'Focused' : 'Global'}</StatValue>
-          <StatLabel>AI Mode</StatLabel>
-        </StatItem>
-      </StatsGrid>
+        <div className="text-center">
+          <div className="text-xl font-bold text-indigo-600 mb-1">{mode === 'scoped' ? 'Focused' : 'Global'}</div>
+          <div className="text-xs text-stone-600 uppercase tracking-wide">AI Mode</div>
+        </div>
+      </div>
     );
   };
 
   return (
-    <ContextContainer>
-      <ContextHeader 
-        expanded={expanded}
+    <div className="bg-white/95 backdrop-blur-md rounded-xl p-4 mb-4 border border-indigo-200">
+      <div 
+        className={`flex items-center justify-between ${expanded ? 'mb-4' : ''} cursor-pointer p-2 rounded-lg transition-colors hover:bg-indigo-50`}
         onClick={() => setExpanded(!expanded)}
       >
         <div>
-          <ContextTitle>
+          <div className="flex items-center gap-2 font-semibold text-stone-900">
             <Eye size={16} />
             AI Context Scope
-          </ContextTitle>
-          <ContextSummary>
-            <ModeIndicator scoped={mode === 'scoped'}>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-stone-600 mt-1">
+            <div className={`flex items-center gap-2 ${mode === 'scoped' ? 'text-indigo-600 font-semibold' : ''}`}>
               {mode === 'scoped' ? <Target size={14} /> : <MapPin size={14} />}
               {getContextSummary()}
-            </ModeIndicator>
-          </ContextSummary>
+            </div>
+          </div>
         </div>
         
-        <ExpandButton onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}>
+        <button 
+          className="bg-transparent border-none text-indigo-600 cursor-pointer p-1 rounded flex items-center transition-colors hover:bg-indigo-100"
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+        >
           {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </ExpandButton>
-      </ContextHeader>
+        </button>
+      </div>
 
       {expanded && (
-        <ContextDetails>
+        <div className="animate-in fade-in-50 slide-in-from-top-2 duration-300">
           {mode === 'scoped' && contextData ? (
             <>
               {renderCentralNode()}
@@ -365,21 +198,16 @@ const ContextVisualization = ({
               {renderStats()}
             </>
           ) : (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '1rem',
-              color: '#666',
-              fontSize: '0.9rem'
-            }}>
+            <div className="text-center p-4 text-stone-600 text-sm">
               {mode === 'global' ? 
                 'AI has access to all available data sources without specific contextual focus.' :
                 'No specific navigation context set. Switch to an area or entity view to enable scoped AI responses.'
               }
             </div>
           )}
-        </ContextDetails>
+        </div>
       )}
-    </ContextContainer>
+    </div>
   );
 };
 

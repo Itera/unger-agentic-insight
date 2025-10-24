@@ -1,279 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
-import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge, BarChart3, Settings, Database, Play, Box } from 'lucide-react';
-import { useNavigationContext } from '../../contexts/NavigationContext';
+import { ArrowLeft, MapPin, Activity, Settings, Database, Play, Box } from 'lucide-react';
 import Breadcrumb from '../../components/Breadcrumb';
-import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 import WorkOrdersSection from '../../components/WorkOrdersSection';
+import { Button } from '../../components/ui/button';
+import { Card, CardHeader, CardContent, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
 
-const DetailContainer = styled.div`
-  width: 100%;
-`;
-
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: white;
-  cursor: pointer;
-  transition: background 0.3s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+const getEntityIconBg = (type) => {
+  switch(type) {
+    case 'Equipment': return 'bg-orange-600'; // Orange for equipment
+    case 'Sensor': return 'bg-emerald-700'; // Green for sensors
+    case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
+    case 'ProcessStep': return 'bg-green-600'; // Green for process steps
+    case 'AssetArea': return 'bg-sky-500'; // Light blue for areas
+    default: return 'bg-stone-600'; // Grey default
   }
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-`;
-
-const Subtitle = styled.p`
-  color: #ccc;
-  margin: 0.5rem 0 0 0;
-  font-size: 0.9rem;
-`;
-
-const ContentContainer = styled.div`
-  display: grid;
-  gap: 1.5rem;
-`;
-
-const Section = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f0f0;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-`;
-
-const SectionIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
-`;
-
-const EntityDetailsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const DetailCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 1.5rem;
-`;
-
-const DetailTitle = styled.h3`
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 1rem 0;
-`;
-
-const DetailContent = styled.div`
-  color: #666;
-  line-height: 1.5;
-`;
-
-const PropertiesGrid = styled.div`
-  display: grid;
-  gap: 0.75rem;
-`;
-
-const PropertyRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
-  
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const PropertyKey = styled.span`
-  font-weight: 500;
-  color: #555;
-`;
-
-const PropertyValue = styled.span`
-  color: #333;
-  font-family: monospace;
-  background: #f5f5f5;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-`;
-
-const EntitiesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-`;
-
-const EntityCard = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 1rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-
-  &:hover {
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-  }
-`;
-
-const EntityHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-`;
-
-const EntityIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  color: white;
-  background: ${props => {
-    switch(props.type) {
-      case 'Equipment': return 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
-      case 'Sensor': return 'linear-gradient(135deg, #4ecdc4, #44a08d)';
-      case 'Tank': return 'linear-gradient(135deg, #45b7d1, #2980b9)';
-      case 'ProcessStep': return 'linear-gradient(135deg, #96ceb4, #27ae60)';
-      case 'AssetArea': return 'linear-gradient(135deg, #f093fb, #f5576c)';
-      default: return 'linear-gradient(135deg, #667eea, #764ba2)';
-    }
-  }};
-`;
-
-const EntityName = styled.h3`
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  margin: 0;
-  flex: 1;
-`;
-
-const EntityDescription = styled.p`
-  color: #666;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin: 0;
-`;
-
-const EntityMeta = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
-`;
-
-const MetaTag = styled.span`
-  background: #e9ecef;
-  color: #495057;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-`;
-
-const RelationshipTag = styled.span`
-  background: #d4edda;
-  color: #155724;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: 500;
-`;
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.5rem;
-`;
-
-const StatLabel = styled.div`
-  color: #666;
-  font-size: 0.9rem;
-`;
-
-const LoadingState = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem;
-  color: white;
-  font-size: 1.1rem;
-`;
-
-const ErrorState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4rem;
-  color: white;
-  text-align: center;
-`;
+};
 
 const EntityDetail = () => {
   const { entityType, entityId } = useParams();
@@ -379,22 +122,22 @@ const EntityDetail = () => {
 
   if (loading) {
     return (
-      <LoadingState>
-        <Activity className="animate-spin" size={24} style={{ marginRight: '0.5rem' }} />
+      <div className="flex justify-center items-center p-16 text-stone-700 text-lg">
+        <Activity className="animate-spin mr-2" size={24} />
         Loading entity details...
-      </LoadingState>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <ErrorState>
-        <h2>Error Loading Entity</h2>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+      <div className="flex flex-col items-center p-16 text-stone-700 text-center">
+        <h2 className="text-xl font-semibold mb-2">Error Loading Entity</h2>
+        <p className="mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>
           Retry
-        </button>
-      </ErrorState>
+        </Button>
+      </div>
     );
   }
 
@@ -421,94 +164,102 @@ const EntityDetail = () => {
   });
 
   return (
-    <DetailContainer>
+    <div className="w-full">
       <Breadcrumb items={breadcrumbItems} />
       
-      <Header>
-        <BackButton onClick={handleBack}>
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="outline" onClick={handleBack} className="gap-2">
           <ArrowLeft size={20} />
           Back
-        </BackButton>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', background: 'rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white' }}>
-            {getEntityIcon(entityType)}
-          </div>
-          <div>
-            <Title>
-              {entityData?.name || 
-               entityData?.properties?.equipment_name ||
-               entityData?.properties?.tag ||
-               entityData?.properties?.name ||
-               entityId}
-            </Title>
-            {entityData?.description && (
-              <Subtitle>{entityData.description}</Subtitle>
-            )}
-          </div>
+        </Button>
+        <div className={`flex items-center justify-center w-10 h-10 rounded-lg text-white ${getEntityIconBg(entityType)}`}>
+          {getEntityIcon(entityType)}
         </div>
-      </Header>
+        <div>
+          <h1 className="text-3xl font-bold text-stone-900 tracking-tight">
+            {entityData?.name || 
+             entityData?.properties?.equipment_name ||
+             entityData?.properties?.tag ||
+             entityData?.properties?.name ||
+             entityId}
+          </h1>
+          {entityData?.description && (
+            <p className="text-stone-500 mt-1">{entityData.description}</p>
+          )}
+        </div>
+      </div>
 
-      <ContentContainer>
+      <div className="grid gap-6">
         {/* Entity Details */}
-        <EntityDetailsGrid>
-          <DetailCard>
-            <DetailTitle>Entity Information</DetailTitle>
-            <DetailContent>
-              <PropertiesGrid>
-                <PropertyRow>
-                  <PropertyKey>Type:</PropertyKey>
-                  <PropertyValue>{entityType}</PropertyValue>
-                </PropertyRow>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Entity Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3">
+                <div className="flex justify-between py-2 border-b border-stone-200 last:border-0">
+                  <span className="font-medium text-stone-600">Type:</span>
+                  <span className="font-mono text-sm bg-stone-100 px-2 py-1 rounded">{entityType}</span>
+                </div>
                 {entityData?.labels && entityData.labels.length > 0 && (
-                  <PropertyRow>
-                    <PropertyKey>Labels:</PropertyKey>
-                    <PropertyValue>{entityData.labels.join(', ')}</PropertyValue>
-                  </PropertyRow>
+                  <div className="flex justify-between py-2 border-b border-stone-200 last:border-0">
+                    <span className="font-medium text-stone-600">Labels:</span>
+                    <span className="font-mono text-sm bg-stone-100 px-2 py-1 rounded">{entityData.labels.join(', ')}</span>
+                  </div>
                 )}
                 {entityData?.id && (
-                  <PropertyRow>
-                    <PropertyKey>ID:</PropertyKey>
-                    <PropertyValue>{entityData.id}</PropertyValue>
-                  </PropertyRow>
+                  <div className="flex justify-between py-2 border-b border-stone-200 last:border-0">
+                    <span className="font-medium text-stone-600">ID:</span>
+                    <span className="font-mono text-sm bg-stone-100 px-2 py-1 rounded">{entityData.id}</span>
+                  </div>
                 )}
-              </PropertiesGrid>
-            </DetailContent>
-          </DetailCard>
+              </div>
+            </CardContent>
+          </Card>
           
           {entityData?.properties && Object.keys(entityData.properties).length > 0 && (
-            <DetailCard>
-              <DetailTitle>Properties</DetailTitle>
-              <DetailContent>
-                <PropertiesGrid>
+            <Card>
+              <CardHeader>
+                <CardTitle>Properties</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 max-h-96 overflow-y-auto">
                   {Object.entries(entityData.properties).map(([key, value]) => (
-                    <PropertyRow key={key}>
-                      <PropertyKey>{key}:</PropertyKey>
-                      <PropertyValue>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</PropertyValue>
-                    </PropertyRow>
+                    <div key={key} className="flex justify-between py-2 border-b border-stone-200 last:border-0">
+                      <span className="font-medium text-stone-600">{key}:</span>
+                      <span className="font-mono text-sm bg-stone-100 px-2 py-1 rounded break-all max-w-xs">
+                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </span>
+                    </div>
                   ))}
-                </PropertiesGrid>
-              </DetailContent>
-            </DetailCard>
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </EntityDetailsGrid>
+        </div>
 
         {/* Connected Entities Stats */}
         {stats.totalConnected > 0 && (
-          <StatsContainer>
-            <StatCard>
-              <StatValue>{stats.totalConnected || 0}</StatValue>
-              <StatLabel>Total Connected Entities</StatLabel>
-            </StatCard>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-primary/10 border-primary/20">
+              <CardContent className="pt-6 text-center">
+                <div className="text-3xl font-bold text-primary mb-2">{stats.totalConnected || 0}</div>
+                <div className="text-sm font-medium text-stone-700">Total Connected Entities</div>
+              </CardContent>
+            </Card>
             {Object.entries(stats).map(([key, value]) => {
               if (key === 'totalConnected') return null;
               return (
-                <StatCard key={key}>
-                  <StatValue>{value}</StatValue>
-                  <StatLabel>Connected {key}</StatLabel>
-                </StatCard>
+                <Card key={key} className="bg-primary/10 border-primary/20">
+                  <CardContent className="pt-6 text-center">
+                    <div className="text-3xl font-bold text-primary mb-2">{value}</div>
+                    <div className="text-sm font-medium text-stone-700">Connected {key}</div>
+                  </CardContent>
+                </Card>
               );
             })}
-          </StatsContainer>
+          </div>
         )}
 
         {/* Connected Entities */}
@@ -516,72 +267,80 @@ const EntityDetail = () => {
           if (!entities || entities.length === 0) return null;
           
           return (
-            <Section key={connectedType}>
-              <SectionHeader>
-                <SectionIcon>
-                  {getEntityIcon(connectedType)}
-                </SectionIcon>
-                <SectionTitle>Connected {connectedType} ({entities.length})</SectionTitle>
-              </SectionHeader>
-              
-              <EntitiesGrid>
-                {entities.map((entity, index) => {
-                  const entityKey = entity.id || entity.name || `${connectedType}_${index}`;
-                  return (
-                    <EntityCard 
-                      key={entityKey}
-                      onClick={() => handleEntityClick(entity, connectedType)}
-                    >
-                      <EntityHeader>
-                        <EntityIcon type={connectedType}>
-                          {getEntityIcon(connectedType)}
-                        </EntityIcon>
-                        <EntityName>
-                          {entity.name || 
-                           entity.properties?.equipment_name || 
-                           entity.properties?.tag || 
-                           entity.properties?.name ||
-                           entity.id || 
-                           'Unknown'}
-                        </EntityName>
-                      </EntityHeader>
-                      
-                      {entity.description && (
-                        <EntityDescription>{entity.description}</EntityDescription>
-                      )}
-                      
-                      <EntityMeta>
-                        {entity.relationship_type && (
-                          <RelationshipTag>
-                            {entity.relationship_type}
-                          </RelationshipTag>
+            <Card key={connectedType}>
+              <CardHeader className="border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-lg text-white ${getEntityIconBg(connectedType)}`}>
+                    {getEntityIcon(connectedType)}
+                  </div>
+                  <CardTitle>Connected {connectedType} <Badge variant="outline" className="ml-2">{entities.length}</Badge></CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {entities.map((entity, index) => {
+                    const entityKey = entity.id || entity.name || `${connectedType}_${index}`;
+                    return (
+                      <div 
+                        key={entityKey}
+                        onClick={() => handleEntityClick(entity, connectedType)}
+                        className="bg-stone-50 border border-stone-200 rounded-xl p-4 transition-all cursor-pointer hover:bg-white hover:shadow-md hover:-translate-y-0.5"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`flex items-center justify-center w-7 h-7 rounded-md text-white ${getEntityIconBg(connectedType)}`}>
+                            {getEntityIcon(connectedType)}
+                          </div>
+                          <h3 className="text-base font-medium text-stone-900 flex-1">
+                            {entity.name || 
+                             entity.properties?.equipment_name || 
+                             entity.properties?.tag || 
+                             entity.properties?.name ||
+                             entity.id || 
+                             'Unknown'}
+                          </h3>
+                        </div>
+                        
+                        {entity.description && (
+                          <p className="text-stone-600 text-sm leading-relaxed mb-2">{entity.description}</p>
                         )}
-                        {entity.properties && Object.entries(entity.properties).slice(0, 3).map(([key, value]) => (
-                          <MetaTag key={key}>
-                            {key}: {typeof value === 'object' ? 'Object' : String(value).slice(0, 20)}
-                          </MetaTag>
-                        ))}
-                      </EntityMeta>
-                    </EntityCard>
-                  );
-                })}
-              </EntitiesGrid>
-            </Section>
+                        
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {entity.relationship_type && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">
+                              {entity.relationship_type}
+                            </Badge>
+                          )}
+                          {entity.properties && Object.entries(entity.properties).slice(0, 3).map(([key, value]) => (
+                            <Badge key={key} variant="secondary">
+                              {key}: {typeof value === 'object' ? 'Object' : String(value).slice(0, 20)}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
         
         {Object.keys(connectedEntities).length === 0 && (
-          <Section>
-            <SectionHeader>
-              <SectionIcon>
-                <Box />
-              </SectionIcon>
-              <SectionTitle>No Connected Entities</SectionTitle>
-            </SectionHeader>
-            <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-              No connected entities found for this {entityType.toLowerCase()}.
-            </p>
-          </Section>
+          <Card>
+            <CardHeader className="border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 bg-stone-400 rounded-lg text-white">
+                  <Box />
+                </div>
+                <CardTitle>No Connected Entities</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-stone-600 text-center py-8">
+                No connected entities found for this {entityType.toLowerCase()}.
+              </p>
+            </CardContent>
+          </Card>
         )}
         
         {/* Work Orders Section - Show for sensors, equipment, and some other entity types */}
@@ -595,8 +354,8 @@ const EntityDetail = () => {
             areaName={areaName}
           />
         )}
-      </ContentContainer>
-    </DetailContainer>
+      </div>
+    </div>
   );
 };
 

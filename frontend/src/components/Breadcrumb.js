@@ -1,53 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import { ChevronRight, Home } from 'lucide-react';
-
-const BreadcrumbContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 0;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-`;
-
-const BreadcrumbItem = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  color: ${props => props.isActive ? 'white' : 'rgba(255, 255, 255, 0.7)'};
-  cursor: ${props => props.isActive ? 'default' : 'pointer'};
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: ${props => props.isActive ? '600' : '400'};
-
-  &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-
-  &:disabled {
-    cursor: default;
-  }
-`;
-
-const Separator = styled(ChevronRight)`
-  color: rgba(255, 255, 255, 0.5);
-  width: 16px;
-  height: 16px;
-`;
-
-const HomeIcon = styled(Home)`
-  width: 16px;
-  height: 16px;
-  margin-right: 0.25rem;
-`;
 
 const Breadcrumb = ({ items = [] }) => {
   const navigate = useNavigate();
@@ -63,29 +16,33 @@ const Breadcrumb = ({ items = [] }) => {
     {
       label: 'Plants',
       path: '/navigate',
-      icon: <HomeIcon />,
+      icon: <Home className="w-4 h-4 mr-1" />,
       isActive: false
     },
     ...items
   ];
 
   return (
-    <BreadcrumbContainer>
+    <div className="flex items-center gap-2 py-4 mb-4 text-sm">
       {allItems.map((item, index) => (
         <React.Fragment key={index}>
-          <BreadcrumbItem
-            isActive={item.isActive}
+          <button
+            className={`flex items-center gap-1 bg-transparent border-none px-3 py-2 rounded-md transition-all no-underline text-sm ${
+              item.isActive 
+                ? 'text-stone-900 cursor-default font-semibold' 
+                : 'text-stone-600 cursor-pointer hover:bg-stone-100 hover:text-stone-900'
+            }`}
             disabled={item.isActive}
             onClick={() => handleItemClick(item)}
           >
             {item.icon}
             {item.label}
-          </BreadcrumbItem>
+          </button>
           
-          {index < allItems.length - 1 && <Separator />}
+          {index < allItems.length - 1 && <ChevronRight className="text-stone-400 w-4 h-4" />}
         </React.Fragment>
       ))}
-    </BreadcrumbContainer>
+    </div>
   );
 };
 

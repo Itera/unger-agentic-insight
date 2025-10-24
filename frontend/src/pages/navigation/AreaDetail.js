@@ -1,139 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import { ArrowLeft, MapPin, Activity, AlertCircle, Zap, Cpu, Thermometer, Gauge, BarChart3, Settings, Database, Play, Box } from 'lucide-react';
 import { useNavigationContext } from '../../contexts/NavigationContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ExpandableEntityCard from '../../components/ExpandableEntityCard';
 import WorkOrdersSection from '../../components/WorkOrdersSection';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
 
-const DetailContainer = styled.div`
-  width: 100%;
-`;
+// All components now use Tailwind and shadcn/ui - no styled-components needed
 
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  color: white;
-  cursor: pointer;
-  transition: background 0.3s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.2);
+const getEntityIconBg = (type) => {
+  switch(type) {
+    case 'Equipment': return 'bg-orange-600'; // Orange for equipment
+    case 'Sensor': return 'bg-emerald-700'; // Green for sensors
+    case 'Equipment Sensors': return 'bg-emerald-600'; // Green for equipment sensors
+    case 'Area Sensors': return 'bg-blue-600'; // Blue for area sensors
+    case 'AssetArea': return 'bg-sky-500'; // Light blue for areas
+    case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
+    case 'ProcessStep': return 'bg-green-600'; // Green for process steps
+    default: return 'bg-stone-600'; // Grey default
   }
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-`;
-
-const ContentContainer = styled.div`
-  display: grid;
-  gap: 1.5rem;
-`;
-
-const Section = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const SectionHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f0f0;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-`;
-
-const SectionIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
-`;
-
-const EntitiesGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-`;
-
-// Styled components for EntityCard removed - now using ExpandableEntityCard component
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.5rem;
-`;
-
-const StatLabel = styled.div`
-  color: #666;
-  font-size: 0.9rem;
-`;
-
-const LoadingState = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem;
-  color: white;
-  font-size: 1.1rem;
-`;
-
-const ErrorState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4rem;
-  color: white;
-  text-align: center;
-`;
+};
 
 const AreaDetail = () => {
   const { areaId } = useParams();
@@ -338,22 +227,23 @@ const AreaDetail = () => {
 
   if (loading) {
     return (
-      <LoadingState>
-        <Activity className="animate-spin" size={24} style={{ marginRight: '0.5rem' }} />
+      <div className="flex justify-center items-center p-16 text-stone-700 text-lg">
+        <Activity className="animate-spin mr-2" size={24} />
         Loading area details...
-      </LoadingState>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <ErrorState>
-        <h2>Error Loading Area</h2>
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', padding: '0.5rem 1rem', background: '#667eea', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+      <div className="flex flex-col items-center p-16 text-stone-700 text-center">
+        <AlertCircle className="mb-4" size={48} />
+        <h2 className="text-xl font-semibold mb-2">Error Loading Area</h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>
           Retry
-        </button>
-      </ErrorState>
+        </Button>
+      </div>
     );
   }
 
@@ -373,75 +263,101 @@ const AreaDetail = () => {
   });
 
   return (
-    <DetailContainer>
+    <div className="w-full">
       <Breadcrumb items={breadcrumbItems} />
       
-      <Header>
-        <BackButton onClick={handleBack}>
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="outline" onClick={handleBack} className="gap-2">
           <ArrowLeft size={20} />
           Back to Overview
-        </BackButton>
-        <MapPin size={24} color="white" />
-        <Title>{areaData?.name || decodeURIComponent(areaId)}</Title>
-      </Header>
+        </Button>
+        <MapPin size={24} className="text-primary" />
+        <h1 className="text-3xl font-bold text-stone-900 tracking-tight">
+          {areaData?.name || decodeURIComponent(areaId)}
+        </h1>
+      </div>
 
-      <ContentContainer>
+      <div className="grid gap-6">
         {/* Stats Overview */}
-        <StatsContainer>
-          <StatCard>
-            <StatValue>{stats.totalEntities || 0}</StatValue>
-            <StatLabel>Total Connected Entities</StatLabel>
-          </StatCard>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-primary/10 border-primary/20">
+            <CardContent className="pt-6 text-center">
+              <div className="text-3xl font-bold text-primary mb-2">
+                {stats.totalEntities || 0}
+              </div>
+              <div className="text-sm font-medium text-stone-700">
+                Total Connected Entities
+              </div>
+            </CardContent>
+          </Card>
           {Object.entries(stats).map(([key, value]) => {
             if (key === 'totalEntities') return null;
             return (
-              <StatCard key={key}>
-                <StatValue>{value}</StatValue>
-                <StatLabel>{key}</StatLabel>
-              </StatCard>
+              <Card key={key} className="bg-primary/10 border-primary/20">
+                <CardContent className="pt-6 text-center">
+                  <div className="text-3xl font-bold text-primary mb-2">
+                    {value}
+                  </div>
+                  <div className="text-sm font-medium text-stone-700">
+                    {key}
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
-        </StatsContainer>
+        </div>
 
         {/* Connected Entities */}
         {Object.entries(connectedEntities).map(([entityType, entities]) => {
           if (!entities || entities.length === 0) return null;
           
           return (
-            <Section key={entityType}>
-              <SectionHeader>
-                <SectionIcon>
-                  {getEntityIcon(entityType)}
-                </SectionIcon>
-                <SectionTitle>{entityType} ({entities.length})</SectionTitle>
-              </SectionHeader>
-              
-              <EntitiesGrid>
-                {entities.map((entity, index) => (
-                  <ExpandableEntityCard
-                    key={entity.id || entity.properties?.tag || index}
-                    entity={entity}
-                    entityType={entityType}
-                    onNavigate={handleEntityClick}
-                  />
-                ))}
-              </EntitiesGrid>
-            </Section>
+            <Card key={entityType}>
+              <CardHeader className="border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-lg text-white ${getEntityIconBg(entityType)}`}>
+                    {getEntityIcon(entityType)}
+                  </div>
+                  <CardTitle className="text-xl">
+                    {entityType} 
+                    <Badge variant="outline" className="ml-2">
+                      {entities.length}
+                    </Badge>
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {entities.map((entity, index) => (
+                    <ExpandableEntityCard
+                      key={entity.id || entity.properties?.tag || index}
+                      entity={entity}
+                      entityType={entityType}
+                      onNavigate={handleEntityClick}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
         
         {Object.keys(connectedEntities).length === 0 && (
-          <Section>
-            <SectionHeader>
-              <SectionIcon>
-                <Box />
-              </SectionIcon>
-              <SectionTitle>No Connected Entities</SectionTitle>
-            </SectionHeader>
-            <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-              No connected entities found for this area.
-            </p>
-          </Section>
+          <Card>
+            <CardHeader className="border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg text-white">
+                  <Box />
+                </div>
+                <CardTitle>No Connected Entities</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <p className="text-muted-foreground text-center py-8">
+                No connected entities found for this area.
+              </p>
+            </CardContent>
+          </Card>
         )}
         
         {/* Work Orders Section */}
@@ -450,8 +366,8 @@ const AreaDetail = () => {
           entityName={areaData?.name || decodeURIComponent(areaId)}
           areaName={areaData?.name || decodeURIComponent(areaId)}
         />
-      </ContentContainer>
-    </DetailContainer>
+      </div>
+    </div>
   );
 };
 

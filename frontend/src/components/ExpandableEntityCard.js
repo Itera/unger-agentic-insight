@@ -1,206 +1,21 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-import { ChevronDown, ChevronUp, Settings, Activity, Cpu, Zap, Database, Play, Box, Info, Tag, Calendar, AlertCircle, MapPin } from 'lucide-react';
+import { ChevronDown, ChevronUp, Settings, Activity, Cpu, Zap, Database, Play, Box, Tag, AlertCircle, MapPin } from 'lucide-react';
+import { Card, CardHeader, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
-const CardContainer = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 1rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-
-  &:hover {
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+const getEntityIconBg = (type) => {
+  switch(type) {
+    case 'Equipment': return 'bg-orange-600'; // Orange for equipment
+    case 'Sensor': return 'bg-emerald-700'; // Green for sensors
+    case 'Equipment Sensors': return 'bg-emerald-600'; // Green for equipment sensors
+    case 'Area Sensors': return 'bg-blue-600'; // Blue for area sensors
+    case 'AssetArea': return 'bg-sky-500'; // Light blue for areas
+    case 'Tank': return 'bg-cyan-600'; // Cyan for tanks
+    case 'ProcessStep': return 'bg-green-600'; // Green for process steps
+    default: return 'bg-stone-600'; // Grey default
   }
-`;
-
-const CardHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-`;
-
-const EntityIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  color: white;
-  flex-shrink: 0;
-  background: ${props => {
-    switch(props.type) {
-      case 'Equipment': return 'linear-gradient(135deg, #ff6b6b, #ee5a24)';
-      case 'Sensor': return 'linear-gradient(135deg, #4ecdc4, #44a08d)';
-      case 'Equipment Sensors': return 'linear-gradient(135deg, #fd79a8, #e84393)';
-      case 'Area Sensors': return 'linear-gradient(135deg, #fdcb6e, #e17055)';
-      case 'AssetArea': return 'linear-gradient(135deg, #a29bfe, #6c5ce7)'; // Purple gradient for asset areas
-      case 'Tank': return 'linear-gradient(135deg, #45b7d1, #2980b9)';
-      case 'ProcessStep': return 'linear-gradient(135deg, #96ceb4, #27ae60)';
-      default: return 'linear-gradient(135deg, #667eea, #764ba2)';
-    }
-  }};
-`;
-
-const EntityInfo = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-`;
-
-const EntityName = styled.h3`
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  margin: 0;
-  line-height: 1.3;
-`;
-
-const EntityDescription = styled.p`
-  color: #666;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  margin: 0;
-`;
-
-const ExpandButton = styled.button`
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #333;
-  }
-`;
-
-const ExpandedContent = styled.div`
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
-  animation: ${props => props.isExpanded ? 'expandIn' : 'expandOut'} 0.3s ease;
-  
-  @keyframes expandIn {
-    from {
-      opacity: 0;
-      max-height: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      max-height: 500px;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes expandOut {
-    from {
-      opacity: 1;
-      max-height: 500px;
-      transform: translateY(0);
-    }
-    to {
-      opacity: 0;
-      max-height: 0;
-      transform: translateY(-10px);
-    }
-  }
-`;
-
-const DetailSection = styled.div`
-  margin-bottom: 1rem;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const DetailSectionTitle = styled.h4`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 0.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const PropertyGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.5rem;
-`;
-
-const PropertyItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  background: #f8f9fa;
-  padding: 0.5rem;
-  border-radius: 6px;
-`;
-
-const PropertyLabel = styled.span`
-  font-size: 0.8rem;
-  color: #666;
-  font-weight: 500;
-  text-transform: capitalize;
-`;
-
-const PropertyValue = styled.span`
-  font-size: 0.9rem;
-  color: #333;
-  word-break: break-word;
-`;
-
-const MetaTagsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-`;
-
-const MetaTag = styled.span`
-  background: #e9ecef;
-  color: #495057;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
-`;
-
-const ActionButtons = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-`;
-
-const ActionButton = styled.button`
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-`;
+};
 
 const ExpandableEntityCard = ({ entity, entityType, onNavigate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -281,50 +96,55 @@ const ExpandableEntityCard = ({ entity, entityType, onNavigate }) => {
   };
 
   return (
-    <CardContainer onClick={handleCardClick}>
-      <CardHeader>
-        <EntityIcon type={entityType}>
-          {getEntityIcon(entityType)}
-        </EntityIcon>
-        <EntityInfo>
-          <EntityName>{getEntityName(entity)}</EntityName>
-          <EntityDescription>{getEntityDescription(entity)}</EntityDescription>
-        </EntityInfo>
-        <ExpandButton onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}>
-          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </ExpandButton>
+    <Card className="cursor-pointer transition-all hover:bg-stone-50 hover:shadow-md hover:-translate-y-0.5 hover:border-emerald-700" onClick={handleCardClick}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-3 w-full">
+          <div className={`flex items-center justify-center w-7 h-7 rounded-md text-white shrink-0 ${getEntityIconBg(entityType)}`}>
+            {getEntityIcon(entityType)}
+          </div>
+          <div className="flex-1 flex flex-col gap-1">
+            <h3 className="text-base font-semibold text-stone-900 m-0 leading-tight">{getEntityName(entity)}</h3>
+            <p className="text-stone-500 text-sm leading-snug m-0">{getEntityDescription(entity)}</p>
+          </div>
+          <button 
+            className="bg-transparent border-none text-stone-500 cursor-pointer p-1 rounded flex items-center justify-center transition-all hover:bg-emerald-700/10 hover:text-emerald-700"
+            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+          >
+            {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </div>
       </CardHeader>
       
       {isExpanded && (
-        <ExpandedContent isExpanded={isExpanded}>
+        <CardContent className="mt-4 pt-4 border-t border-stone-200 animate-in fade-in-50 slide-in-from-top-2 duration-300">
           {/* Key Information for Sensors and Equipment */}
           {(entityType === 'Sensor' || entityType === 'Equipment') && entity.properties && (
-            <DetailSection>
-              <DetailSectionTitle>
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
                 <Activity size={14} />
                 Key Information
-              </DetailSectionTitle>
-              <PropertyGrid>
+              </h4>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2">
                 {/* Sensor-specific key info */}
                 {entityType === 'Sensor' && (
                   <>
                     {entity.properties.unit && (
-                      <PropertyItem>
-                        <PropertyLabel>Unit</PropertyLabel>
-                        <PropertyValue style={{fontWeight: 600, color: '#2563eb'}}>{entity.properties.unit}</PropertyValue>
-                      </PropertyItem>
+                      <div className="flex flex-col bg-stone-100 p-2 rounded-md">
+                        <span className="text-xs text-stone-500 font-medium capitalize">Unit</span>
+                        <span className="text-sm text-stone-900 font-semibold text-blue-600">{entity.properties.unit}</span>
+                      </div>
                     )}
                     {entity.properties.sensor_type_code && (
-                      <PropertyItem>
-                        <PropertyLabel>Type</PropertyLabel>
-                        <PropertyValue>{entity.properties.sensor_type_code}</PropertyValue>
-                      </PropertyItem>
+                      <div className="flex flex-col bg-stone-100 p-2 rounded-md">
+                        <span className="text-xs text-stone-500 font-medium capitalize">Type</span>
+                        <span className="text-sm text-stone-900">{entity.properties.sensor_type_code}</span>
+                      </div>
                     )}
                     {entity.properties.classification && (
-                      <PropertyItem>
-                        <PropertyLabel>Classification</PropertyLabel>
-                        <PropertyValue>{entity.properties.classification}</PropertyValue>
-                      </PropertyItem>
+                      <div className="flex flex-col bg-stone-100 p-2 rounded-md">
+                        <span className="text-xs text-stone-500 font-medium capitalize">Classification</span>
+                        <span className="text-sm text-stone-900">{entity.properties.classification}</span>
+                      </div>
                     )}
                   </>
                 )}
@@ -332,78 +152,78 @@ const ExpandableEntityCard = ({ entity, entityType, onNavigate }) => {
                 {entityType === 'Equipment' && (
                   <>
                     {entity.properties.equipment_type && (
-                      <PropertyItem>
-                        <PropertyLabel>Equipment Type</PropertyLabel>
-                        <PropertyValue style={{fontWeight: 600, color: '#dc2626'}}>{entity.properties.equipment_type}</PropertyValue>
-                      </PropertyItem>
+                      <div className="flex flex-col bg-stone-100 p-2 rounded-md">
+                        <span className="text-xs text-stone-500 font-medium capitalize">Equipment Type</span>
+                        <span className="text-sm text-stone-900 font-semibold text-red-600">{entity.properties.equipment_type}</span>
+                      </div>
                     )}
                     {entity.properties.sensor_count && (
-                      <PropertyItem>
-                        <PropertyLabel>Sensor Count</PropertyLabel>
-                        <PropertyValue style={{fontWeight: 600, color: '#059669'}}>{entity.properties.sensor_count}</PropertyValue>
-                      </PropertyItem>
+                      <div className="flex flex-col bg-stone-100 p-2 rounded-md">
+                        <span className="text-xs text-stone-500 font-medium capitalize">Sensor Count</span>
+                        <span className="text-sm text-stone-900 font-semibold text-emerald-600">{entity.properties.sensor_count}</span>
+                      </div>
                     )}
                   </>
                 )}
-              </PropertyGrid>
+              </div>
               {/* Source tags for equipment */}
               {entityType === 'Equipment' && entity.properties.source_tags && (
-                <div style={{marginTop: '0.75rem'}}>
-                  <PropertyLabel>Source Tags</PropertyLabel>
-                  <div style={{marginTop: '0.25rem'}}>
+                <div className="mt-3">
+                  <span className="text-xs text-stone-500 font-medium capitalize">Source Tags</span>
+                  <div className="flex flex-wrap gap-2 mt-1">
                     {entity.properties.source_tags.split(',').map((tag, index) => (
-                      <MetaTag key={index} style={{marginRight: '0.5rem', marginBottom: '0.25rem'}}>
+                      <Badge key={index} variant="secondary">
                         {tag.trim()}
-                      </MetaTag>
+                      </Badge>
                     ))}
                   </div>
                 </div>
               )}
-            </DetailSection>
+            </div>
           )}
           
           {/* All Entity Properties */}
           {entity.properties && Object.keys(entity.properties).length > 0 && (
-            <DetailSection>
-              <DetailSectionTitle>
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
                 <Tag size={14} />
                 All Properties
-              </DetailSectionTitle>
-              <PropertyGrid>
+              </h4>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2">
                 {Object.entries(entity.properties).map(([key, value]) => (
-                  <PropertyItem key={key}>
-                    <PropertyLabel>{key.replace(/_/g, ' ')}</PropertyLabel>
-                    <PropertyValue>{formatPropertyValue(value)}</PropertyValue>
-                  </PropertyItem>
+                  <div key={key} className="flex flex-col bg-stone-100 p-2 rounded-md">
+                    <span className="text-xs text-stone-500 font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                    <span className="text-sm text-stone-900 break-words">{formatPropertyValue(value)}</span>
+                  </div>
                 ))}
-              </PropertyGrid>
-            </DetailSection>
+              </div>
+            </div>
           )}
 
           {/* Entity Labels */}
           {entity.labels && entity.labels.length > 0 && (
-            <DetailSection>
-              <DetailSectionTitle>
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
                 <AlertCircle size={14} />
                 Labels
-              </DetailSectionTitle>
-              <MetaTagsContainer>
+              </h4>
+              <div className="flex flex-wrap gap-2">
                 {entity.labels.map((label, index) => (
-                  <MetaTag key={index}>{label}</MetaTag>
+                  <Badge key={index} variant="secondary">{label}</Badge>
                 ))}
-              </MetaTagsContainer>
-            </DetailSection>
+              </div>
+            </div>
           )}
 
           {/* Actions */}
-          <ActionButtons>
-            <ActionButton onClick={handleNavigateClick}>
+          <div className="flex gap-2 mt-4">
+            <Button onClick={handleNavigateClick} size="sm">
               View Details
-            </ActionButton>
-          </ActionButtons>
-        </ExpandedContent>
+            </Button>
+          </div>
+        </CardContent>
       )}
-    </CardContainer>
+    </Card>
   );
 };
 
