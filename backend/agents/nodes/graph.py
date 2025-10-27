@@ -53,8 +53,13 @@ User Query: {query}
 Generate a single Cypher query that answers this question. Return ONLY the Cypher query, no explanation.
 Do not include markdown code fences (```), just the raw Cypher.
 
+IMPORTANT: For work order/maintenance queries about an area, return the SENSORS in that area.
+The maintenance system will use those sensor tags to check for work orders.
+
 Example queries:
 - "What sensors are in area 40-10?" → MATCH (a:AssetArea {{name: "40-10"}})-[:HAS_SENSOR]->(s:Sensor) RETURN s.tag, s.description, s.unit LIMIT 50
+- "Are there work orders in area 40-10?" → MATCH (a:AssetArea {{name: "40-10"}})-[:HAS_SENSOR]->(s:Sensor) RETURN s.tag, s.area_code LIMIT 50
+- "Show maintenance for area 40-10" → MATCH (a:AssetArea {{name: "40-10"}})-[:HAS_SENSOR]->(s:Sensor) RETURN s.tag, s.description LIMIT 50
 - "How many equipment items are there?" → MATCH (e:Equipment) RETURN COUNT(DISTINCT e) as equipment_count
 - "Show me temperature sensors" → MATCH (s:Sensor) WHERE s.sensor_type_code = 'TI' RETURN s.tag, s.description, s.unit LIMIT 50
 - "List equipment in area 40-10" → MATCH (a:AssetArea {{name: "40-10"}})-[:CONTAINS]->(e:Equipment) RETURN e.properties.equipment_name, e.properties.equipment_type LIMIT 50
