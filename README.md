@@ -1,32 +1,53 @@
-# Agentic Insight - Industrial Data Analytics POC
+# Agentic Insight - Industrial Data Analytics with Multi-Agent AI
 
-A proof-of-concept application that integrates OpenAI agents with Azure Data Explorer (ADX) through Model Context Protocol (MCP) to provide AI-powered insights from industrial sensor data.
+An intelligent industrial data analytics platform that uses **LangGraph-based multi-agent orchestration** to provide comprehensive insights by combining graph data, maintenance systems, and sensor analytics.
 
 ## Features
 
-- 🤖 **AI-Powered Analysis**: Uses OpenAI GPT-4 to analyze industrial data and provide actionable insights
-- 📊 **Data Import**: Upload and process CSV files containing HMI sensor data, tag configurations, and measurements  
-- 🔍 **Natural Language Queries**: Ask questions about your data in plain English
-- 📈 **Data Visualization**: Interactive charts and tables for time-series data
-- 🏗️ **Dual Data Sources**: Support for both local PostgreSQL database and Azure Data Explorer
+- 🤖 **Multi-Agent AI**: Specialized agents collaborate using LangGraph to answer complex queries
+- 🕸️ **Graph Intelligence**: Neo4j-powered plant/area/equipment/sensor topology queries
+- 🔧 **Maintenance Integration**: Work orders and asset status via MCP protocol
+- 📊 **Sensor Analytics**: Real-time measurements and anomaly detection
+- 🔍 **Natural Language Queries**: Ask questions in plain English, agents figure out the rest
+- 🎯 **Smart Routing**: Only invokes agents needed for your specific query
+- 📈 **Execution Transparency**: See exactly which agents were consulted and how long they took
 - 🐳 **Containerized**: Full Docker setup for easy deployment
-- 🎨 **Sleek UI**: Modern, responsive React frontend
 
 ## Architecture
 
+### Multi-Agent Orchestration
+
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Frontend  │    │   Backend   │    │  ADX MCP    │    │   Database  │
-│   (React)   │◄──►│  (FastAPI)  │◄──►│  Service    │◄──►│(PostgreSQL) │
-│             │    │             │    │             │    │   /ADX      │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
+User Query → API → Workflow Coordinator (LangGraph)
                            │
-                           ▼
-                   ┌─────────────┐
-                   │   OpenAI    │
-                   │   GPT-4     │
-                   └─────────────┘
+        ┌──────────────────┼──────────────┬─────────┐
+        ▼                  ▼              ▼         ▼
+   Graph Agent      Maintenance     ADX Agent   Synthesizer
+   (Neo4j)          Agent (MCP)     (Mock)      (Combines All)
+        │                  │              │         │
+        └──────────────────┴──────────────┴─────────┘
+                           │
+                  Final Response + Execution Trace
 ```
+
+### System Components
+
+```
+┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
+│   Frontend  │    │   Backend        │    │   Neo4j     │
+│   (React)   │◄──►│   (FastAPI)      │◄──►│   Graph     │
+│             │    │   + Agents       │    │   Database  │
+└─────────────┘    └────────┬─────────┘    └─────────────┘
+                            │
+         ┌──────────────────┼──────────────────┐
+         ▼                  ▼                  ▼
+   ┌──────────┐      ┌──────────┐      ┌──────────┐
+   │Maintenance│      │   ADX    │      │  OpenAI  │
+   │   MCP     │      │   MCP    │      │  GPT-4   │
+   └──────────┘      └──────────┘      └──────────┘
+```
+
+See [MULTI_AGENT_ARCHITECTURE.md](MULTI_AGENT_ARCHITECTURE.md) for detailed documentation.
 
 ## Quick Start
 
@@ -162,11 +183,52 @@ python main.py
 
 ## API Endpoints
 
-- `POST /import-csv` - Upload CSV data
-- `POST /query` - Process natural language queries
+- `POST /query` - Process natural language queries (multi-agent)
+- `POST /query/contextual` - Process queries with context (multi-agent)
 - `GET /health` - Health check
-- `GET /tables` - List available tables
-- `GET /import-status` - View import statistics
+- `GET /graph/*` - Graph database operations
+- `GET /entities/*` - Entity management
+- `GET /maintenance/*` - Maintenance data
+
+## Testing
+
+### Run Backend Tests
+
+```bash
+cd backend
+
+# Install test dependencies
+pip install -r requirements.txt
+
+# Run all tests
+pytest -v
+
+# Run agent tests specifically
+pytest agents/tests/ -v
+
+# Run with coverage
+pytest --cov=agents agents/tests/
+
+# Test specific agent
+pytest agents/tests/test_graph_agent.py -v
+```
+
+### Test Coverage
+
+- **Foundation Tests**: Base agent, state management, MCP client
+- **Individual Agent Tests**: Graph, Maintenance, ADX agents
+- **Workflow Tests**: Coordinator, synthesizer, routing logic
+- **Integration Tests**: End-to-end multi-agent queries
+
+### Manual Testing
+
+1. Start all services: `docker-compose up`
+2. Navigate to http://localhost:3000/query
+3. Try these example queries:
+   - "What sensors are in the plant?" (Graph only)
+   - "Show me work orders" (Graph + Maintenance)
+   - "Are there sensor anomalies?" (All agents)
+4. Check execution trace in response
 
 ## Troubleshooting
 
