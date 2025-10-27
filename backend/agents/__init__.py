@@ -6,9 +6,12 @@ Agents collaborate to answer complex queries spanning graph data, maintenance sy
 """
 
 from agents.state import AgentState, ExecutionTrace, AgentResult
+from agents.workflow import WorkflowCoordinator, get_coordinator
 
 __all__ = [
     "AgentState",
     "ExecutionTrace", 
     "AgentResult",
+    "WorkflowCoordinator",
+    "get_coordinator",
 ]
