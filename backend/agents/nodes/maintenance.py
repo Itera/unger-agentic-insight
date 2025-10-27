@@ -91,11 +91,14 @@ class MaintenanceAgent(BaseAgent):
         sensor_names = []
         
         for result in results:
-            # Try different possible field names for sensors
-            if "tag" in result:
+            # Try different possible field names (Cypher results use aliases like "s.tag")
+            if "s.tag" in result:
+                sensor_names.append(result["s.tag"])
+            elif "tag" in result:
                 sensor_names.append(result["tag"])
+            elif "s.name" in result:
+                sensor_names.append(result["s.name"])
             elif "name" in result:
-                # Check if it looks like a sensor name (contains numbers/letters pattern)
                 name = result["name"]
                 if any(char.isdigit() for char in name):
                     sensor_names.append(name)
