@@ -17,3 +17,5 @@ class QueryResponse(BaseModel):
     source: str
     timestamp: datetime
     context_used: Optional[Dict[str, Any]] = None  # Context data that was actually used
+    execution_trace: Optional[Dict[str, Any]] = None  # Multi-agent execution trace
+    errors: Optional[List[str]] = None  # Any errors encountered during execution
