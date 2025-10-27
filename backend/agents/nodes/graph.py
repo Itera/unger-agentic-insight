@@ -16,10 +16,17 @@ GRAPH_SCHEMA_CONTEXT = """
 You have access to a Neo4j graph database with the following schema:
 
 NODES:
-- Plant: S-Plant, T-Plant
-- AssetArea: Areas within plants (e.g., "40-10", "75-12")
-- Equipment: Industrial equipment with properties (equipment_name, equipment_type, sensor_count, source_tags)
-- Sensor: Measurement devices with properties (tag, unit, sensor_type_code, classification)
+- Plant: S-Plant, T-Plant (properties: name)
+- AssetArea: Areas within plants (properties: name, area_code - e.g., "40-10", "75-12")
+- Equipment: Industrial equipment (properties: equipment_name, equipment_type, sensor_count, source_tags)
+- Sensor: Measurement devices with properties:
+  * tag: sensor tag identifier (e.g., "4010TI371.DACA.PV")
+  * description: human-readable description
+  * sensor_type_code: type code (e.g., "TI", "PI")
+  * unit: measurement unit (e.g., "°C", "bar")
+  * area_code: area identifier (e.g., "40-10")
+  * classification: sensor classification (e.g., "PROCESS")
+  * created_at: timestamp
 
 RELATIONSHIPS:
 - (Plant)-[:CONTAINS]->(AssetArea)
@@ -27,11 +34,11 @@ RELATIONSHIPS:
 - (AssetArea)-[:HAS_SENSOR]->(Sensor)
 - (Equipment)-[:HAS_SENSOR]->(Sensor)
 
-IMPORTANT RULES:
-1. Always use LIMIT 50 to prevent returning too many results
-2. Property access: Use n.property_name for direct properties, n.properties for nested properties
-3. Sensor tags are stored in s.properties.tag (NOT s.tag)
-4. Equipment names are in e.properties.equipment_name
+IMPORTANT PROPERTY ACCESS RULES:
+1. Sensor properties are DIRECT properties: use s.tag, s.description, s.unit (NOT s.properties.tag)
+2. Equipment properties are NESTED: use e.properties.equipment_name
+3. AssetArea and Plant use direct properties: a.name, p.name
+4. Always use LIMIT 50 to prevent returning too many results
 5. Use RETURN DISTINCT when appropriate to avoid duplicates
 6. For counting, use COUNT(DISTINCT n)
 """
@@ -47,9 +54,10 @@ Generate a single Cypher query that answers this question. Return ONLY the Cyphe
 Do not include markdown code fences (```), just the raw Cypher.
 
 Example queries:
-- "What sensors are in area 40-10?" → MATCH (a:AssetArea {{name: "40-10"}})-[:HAS_SENSOR]->(s:Sensor) RETURN s.name, s.properties.tag LIMIT 50
+- "What sensors are in area 40-10?" → MATCH (a:AssetArea {{name: "40-10"}})-[:HAS_SENSOR]->(s:Sensor) RETURN s.tag, s.description, s.unit LIMIT 50
 - "How many equipment items are there?" → MATCH (e:Equipment) RETURN COUNT(DISTINCT e) as equipment_count
-- "Show me temperature sensors" → MATCH (s:Sensor) WHERE s.properties.sensor_type_code CONTAINS 'T' RETURN s.name, s.properties.tag LIMIT 50
+- "Show me temperature sensors" → MATCH (s:Sensor) WHERE s.sensor_type_code = 'TI' RETURN s.tag, s.description, s.unit LIMIT 50
+- "List equipment in area 40-10" → MATCH (a:AssetArea {{name: "40-10"}})-[:CONTAINS]->(e:Equipment) RETURN e.properties.equipment_name, e.properties.equipment_type LIMIT 50
 
 Your query:"""
 
