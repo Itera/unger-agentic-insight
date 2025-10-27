@@ -155,25 +155,21 @@ Your analysis (JSON only):"""
         
         return state
     
-    def _graph_agent_node(self, state: AgentState) -> AgentState:
+    async def _graph_agent_node(self, state: AgentState) -> AgentState:
         """Execute Graph Agent node."""
-        import asyncio
-        return asyncio.run(self.graph_agent.run(state))
+        return await self.graph_agent.run(state)
     
-    def _maintenance_agent_node(self, state: AgentState) -> AgentState:
+    async def _maintenance_agent_node(self, state: AgentState) -> AgentState:
         """Execute Maintenance Agent node."""
-        import asyncio
-        return asyncio.run(self.maintenance_agent.run(state))
+        return await self.maintenance_agent.run(state)
     
-    def _adx_agent_node(self, state: AgentState) -> AgentState:
+    async def _adx_agent_node(self, state: AgentState) -> AgentState:
         """Execute ADX Agent node."""
-        import asyncio
-        return asyncio.run(self.adx_agent.run(state))
+        return await self.adx_agent.run(state)
     
-    def _synthesizer_node(self, state: AgentState) -> AgentState:
+    async def _synthesizer_node(self, state: AgentState) -> AgentState:
         """Execute Synthesizer Agent node."""
-        import asyncio
-        return asyncio.run(self.synthesizer_agent.run(state))
+        return await self.synthesizer_agent.run(state)
     
     def _route_after_graph(self, state: AgentState) -> str:
         """
@@ -230,8 +226,8 @@ Your analysis (JSON only):"""
         # Create initial state
         initial_state = create_initial_state(query, user_request or {})
         
-        # Execute workflow
-        final_state = self.workflow.invoke(initial_state)
+        # Execute workflow (await since nodes are now async)
+        final_state = await self.workflow.ainvoke(initial_state)
         
         # Build execution trace
         execution_trace = build_execution_trace(final_state)
