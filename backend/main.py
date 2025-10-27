@@ -5,20 +5,15 @@ Integrates OpenAI agents with Azure ADX MCP for industrial data insights
 
 import os
 import json
-import pandas as pd
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
 import httpx
 from openai import OpenAI
 from dotenv import load_dotenv
-import io
 from datetime import datetime
 from services.graph_service import graph_service
-from services.data_mapping_service import initialize_data_mapping_service
 from services.maintenance_service import MaintenanceAPIService
 from datetime import datetime
 import json
@@ -37,7 +32,6 @@ app.add_middleware(
 )
 
 # Configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/insight_db")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ADX_MCP_URL = os.getenv("ADX_MCP_URL", "http://localhost:8001")
 
@@ -45,10 +39,6 @@ ADX_MCP_URL = os.getenv("ADX_MCP_URL", "http://localhost:8001")
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USERNAME = os.getenv("NEO4J_USERNAME", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
-
-# Initialize database
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Initialize OpenAI client
 openai_client = None
@@ -64,10 +54,6 @@ if graph_connected:
     print("Neo4j graph service initialized successfully")
 else:
     print("Neo4j graph service connection failed - continuing without graph features")
-
-# Initialize Data Mapping service
-data_mapping_service = initialize_data_mapping_service(DATABASE_URL)
-print("Data mapping service initialized successfully")
 
 # Initialize Maintenance service
 try:
@@ -141,12 +127,6 @@ class QueryResponse(BaseModel):
     context_used: Optional[Dict[str, Any]] = None  # Context data that was actually used
 
 
-class CSVImportResponse(BaseModel):
-    filename: str
-    rows_imported: int
-    table: str
-    status: str
-
 
 @app.get("/health")
 async def health_check():
@@ -161,195 +141,8 @@ async def health_check():
     }
 
 
-@app.post("/import-csv", response_model=CSVImportResponse)
-async def import_csv(file: UploadFile = File(...)):
-    """Import CSV data into the database"""
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="Only CSV files are supported")
-    
-    try:
-        # Read CSV content
-        contents = await file.read()
-        df = pd.read_csv(io.StringIO(contents.decode('utf-8')))
-        
-        # Determine table based on filename or content structure
-        table_name = determine_table_name(file.filename, df.columns.tolist())
-        
-        # Import data based on table type
-        if table_name == "hmi_sensor_data":
-            rows_imported = import_hmi_data(df)
-        elif table_name == "tag_configuration":
-            rows_imported = import_tag_config(df)
-        elif table_name == "itera_measurements":
-            rows_imported = import_itera_data(df)
-        else:
-            raise HTTPException(status_code=400, detail=f"Unknown data format in file: {file.filename}")
-        
-        # Update import tracking
-        with SessionLocal() as db:
-            db.execute(
-                text("UPDATE csv_imports SET rows_imported = :rows WHERE filename = :filename"),
-                {"rows": rows_imported, "filename": file.filename}
-            )
-            db.commit()
-        
-        return CSVImportResponse(
-            filename=file.filename,
-            rows_imported=rows_imported,
-            table=table_name,
-            status="success"
-        )
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
 
 
-def determine_table_name(filename: str, columns: List[str]) -> str:
-    """Determine which table to import data into based on filename and columns"""
-    if "sample_data" in filename.lower():
-        return "hmi_sensor_data"
-    elif "tagconfig" in filename.lower() or "itera" in filename.lower() and "RecordId" in columns:
-        return "tag_configuration"
-    elif "itera" in filename.lower() and "Time" in columns:
-        return "itera_measurements"
-    elif set(["Time", "Name", "Value"]).issubset(set(columns)):
-        return "hmi_sensor_data"
-    elif "RecordId" in columns and "Name" in columns:
-        return "tag_configuration"
-    else:
-        return "itera_measurements"
-
-
-def import_hmi_data(df: pd.DataFrame) -> int:
-    """Import HMI sensor data"""
-    with SessionLocal() as db:
-        rows_imported = 0
-        for _, row in df.iterrows():
-            try:
-                # Parse timestamp - handle different formats
-                timestamp_str = str(row.get('Time', ''))
-                if timestamp_str and timestamp_str != 'nan':
-                    # Handle the specific format in sample_data.csv
-                    timestamp = pd.to_datetime(timestamp_str.replace(',', '.'), format='%d.%m.%Y %H.%M.%S.%f')
-                    
-                    db.execute(
-                        text("""
-                            INSERT INTO hmi_sensor_data (timestamp, name, value, unit, quality)
-                            VALUES (:timestamp, :name, :value, :unit, :quality)
-                        """),
-                        {
-                            "timestamp": timestamp,
-                            "name": str(row.get('Name', '')),
-                            "value": float(str(row.get('Value', '0')).replace(',', '.')) if row.get('Value') else None,
-                            "unit": str(row.get('Unit', '')) if pd.notna(row.get('Unit')) else None,
-                            "quality": str(row.get('Quality', ''))
-                        }
-                    )
-                    rows_imported += 1
-            except Exception as e:
-                print(f"Error importing row: {e}")
-                continue
-        
-        db.commit()
-        return rows_imported
-
-
-def import_tag_config(df: pd.DataFrame) -> int:
-    """Import tag configuration data"""
-    with SessionLocal() as db:
-        rows_imported = 0
-        for _, row in df.iterrows():
-            try:
-                db.execute(
-                    text("""
-                        INSERT INTO tag_configuration 
-                        (record_id, name, phd_entity_type, tag_no, active, description, 
-                         parent_tag, class_tag, tag_units, tolerance, tolerance_type, 
-                         collection, scan_frequency, high_extreme, low_extreme, asset, 
-                         item, function_name, source_system, source_tag_type, source_name)
-                        VALUES (:record_id, :name, :phd_entity_type, :tag_no, :active, :description,
-                                :parent_tag, :class_tag, :tag_units, :tolerance, :tolerance_type,
-                                :collection, :scan_frequency, :high_extreme, :low_extreme, :asset,
-                                :item, :function_name, :source_system, :source_tag_type, :source_name)
-                    """),
-                    {
-                        "record_id": int(row.get('RecordId', 0)) if pd.notna(row.get('RecordId')) else None,
-                        "name": str(row.get('Name', '')),
-                        "phd_entity_type": str(row.get('PhdEntityType', '')) if pd.notna(row.get('PhdEntityType')) else None,
-                        "tag_no": int(row.get('TagNo', 0)) if pd.notna(row.get('TagNo')) else None,
-                        "active": str(row.get('Active', '')).upper() == 'TRUE',
-                        "description": str(row.get('Description', '')) if pd.notna(row.get('Description')) else None,
-                        "parent_tag": str(row.get('ParentTag', '')) if pd.notna(row.get('ParentTag')) else None,
-                        "class_tag": str(row.get('ClassTag', '')).upper() == 'TRUE',
-                        "tag_units": str(row.get('TagUnits', '')) if pd.notna(row.get('TagUnits')) else None,
-                        "tolerance": float(row.get('Tolerance', 0)) if pd.notna(row.get('Tolerance')) else None,
-                        "tolerance_type": str(row.get('ToleranceType', '')) if pd.notna(row.get('ToleranceType')) else None,
-                        "collection": str(row.get('Collection', '')).upper() == 'TRUE',
-                        "scan_frequency": int(row.get('ScanFrequency', 0)) if pd.notna(row.get('ScanFrequency')) else None,
-                        "high_extreme": float(row.get('HighExtreme', 0)) if pd.notna(row.get('HighExtreme')) else None,
-                        "low_extreme": float(row.get('LowExtreme', 0)) if pd.notna(row.get('LowExtreme')) else None,
-                        "asset": str(row.get('Asset', '')) if pd.notna(row.get('Asset')) else None,
-                        "item": str(row.get('Item', '')) if pd.notna(row.get('Item')) else None,
-                        "function_name": str(row.get('Function', '')) if pd.notna(row.get('Function')) else None,
-                        "source_system": str(row.get('SourceSystem', '')) if pd.notna(row.get('SourceSystem')) else None,
-                        "source_tag_type": str(row.get('SourceTagType', '')) if pd.notna(row.get('SourceTagType')) else None,
-                        "source_name": str(row.get('SourceName', '')) if pd.notna(row.get('SourceName')) else None,
-                    }
-                )
-                rows_imported += 1
-            except Exception as e:
-                print(f"Error importing tag config row: {e}")
-                continue
-        
-        db.commit()
-        return rows_imported
-
-
-def import_itera_data(df: pd.DataFrame) -> int:
-    """Import Itera measurement data"""
-    with SessionLocal() as db:
-        rows_imported = 0
-        for _, row in df.iterrows():
-            try:
-                # Parse timestamp
-                timestamp_str = str(row.get('Time String', ''))
-                if timestamp_str and timestamp_str != 'nan':
-                    timestamp = pd.to_datetime(timestamp_str.strip().replace('\t', ''), format='%d.%m.%Y %H:%M:%S')
-                    
-                    db.execute(
-                        text("""
-                            INSERT INTO itera_measurements 
-                            (timestamp, time_string, li_329_value, li_331_value, li_440_value, 
-                             li_038_value, li_001_value, li_002_value, li_003_value, li_327_value,
-                             li_329_daca_value, li_331_daca_value, li_351_value, li_353_value)
-                            VALUES (:timestamp, :time_string, :li_329, :li_331, :li_440,
-                                    :li_038, :li_001, :li_002, :li_003, :li_327,
-                                    :li_329_daca, :li_331_daca, :li_351, :li_353)
-                        """),
-                        {
-                            "timestamp": timestamp,
-                            "time_string": timestamp_str,
-                            "li_329": float(row.get('740-38-LI-329.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-329.DACA.PV')) else None,
-                            "li_331": float(row.get('740-38-LI-331.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-331.DACA.PV')) else None,
-                            "li_440": float(row.get('740-40-LI-440.DACA.PV', 0)) if pd.notna(row.get('740-40-LI-440.DACA.PV')) else None,
-                            "li_038": float(row.get('792-37-LI-038.DACA.PV', 0)) if pd.notna(row.get('792-37-LI-038.DACA.PV')) else None,
-                            "li_001": float(row.get('740-38-LI-001.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-001.DACA.PV')) else None,
-                            "li_002": float(row.get('740-38-LI-002.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-002.DACA.PV')) else None,
-                            "li_003": float(row.get('740-38-LI-003.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-003.DACA.PV')) else None,
-                            "li_327": float(row.get('740-38-LI-327.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-327.DACA.PV')) else None,
-                            "li_329_daca": float(row.get('740-38-LI-329.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-329.DACA.PV')) else None,
-                            "li_331_daca": float(row.get('740-38-LI-331.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-331.DACA.PV')) else None,
-                            "li_351": float(row.get('740-38-LI-351.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-351.DACA.PV')) else None,
-                            "li_353": float(row.get('740-38-LI-353.DACA.PV', 0)) if pd.notna(row.get('740-38-LI-353.DACA.PV')) else None,
-                        }
-                    )
-                    rows_imported += 1
-            except Exception as e:
-                print(f"Error importing itera row: {e}")
-                continue
-        
-        db.commit()
-        return rows_imported
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -377,12 +170,10 @@ async def process_query(request: QueryRequest):
         
         agent_response = response.choices[0].message.content
         
-        # Try to extract and execute any SQL/KQL query from the response
+        # Try to extract and execute any KQL query from the response
         data = None
         if request.use_adx:
             data = await execute_adx_query_from_response(agent_response)
-        else:
-            data = await execute_sql_query_from_response(agent_response)
         
         return QueryResponse(
             query=request.query,
@@ -426,12 +217,10 @@ async def process_contextual_query(request: ContextualQueryRequest):
         
         agent_response = response.choices[0].message.content
         
-        # Try to extract and execute any SQL/KQL query from the response
+        # Try to extract and execute any KQL query from the response
         data = None
         if request.use_adx:
             data = await execute_adx_query_from_response(agent_response)
-        else:
-            data = await execute_sql_query_from_response(agent_response)
         
         return QueryResponse(
             query=request.query,
@@ -447,7 +236,7 @@ async def process_contextual_query(request: ContextualQueryRequest):
 
 
 async def get_schema_info(use_adx: bool) -> Dict[str, Any]:
-    """Get schema information from ADX MCP or local database"""
+    """Get schema information from ADX MCP"""
     if use_adx:
         try:
             async with httpx.AsyncClient() as client:
@@ -460,16 +249,8 @@ async def get_schema_info(use_adx: bool) -> Dict[str, Any]:
         except Exception as e:
             print(f"Failed to get ADX schema: {e}")
     
-    # Fallback to local database schema
-    with SessionLocal() as db:
-        tables = db.execute(text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")).fetchall()
-        schema = {"tables": [t[0] for t in tables], "columns": {}}
-        
-        for table in schema["tables"]:
-            cols = db.execute(text(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table}'")).fetchall()
-            schema["columns"][table] = [c[0] for c in cols]
-    
-    return schema
+    # Return empty schema if ADX not available
+    return {"tables": [], "columns": {}}
 
 
 def create_system_prompt(schema_info: Dict[str, Any], use_adx: bool) -> str:
@@ -742,45 +523,6 @@ async def execute_adx_query_from_response(response: str) -> Optional[List[Dict[s
     return None
 
 
-async def execute_sql_query_from_response(response: str) -> Optional[List[Dict[str, Any]]]:
-    """Extract and execute SQL query from agent response"""
-    try:
-        # Look for SQL query in response
-        import re
-        sql_match = re.search(r'```sql\n(.*?)\n```', response, re.DOTALL)
-        if not sql_match:
-            sql_match = re.search(r'```\n(.*?)\n```', response, re.DOTALL)
-        
-        if sql_match:
-            query = sql_match.group(1).strip()
-            
-            with SessionLocal() as db:
-                result = db.execute(text(query)).fetchall()
-                # Convert to list of dictionaries
-                if result:
-                    columns = result[0].keys()
-                    return [dict(zip(columns, row)) for row in result]
-    
-    except Exception as e:
-        print(f"Failed to execute SQL query: {e}")
-    
-    return None
-
-
-@app.get("/tables")
-async def list_tables():
-    """List all available tables"""
-    with SessionLocal() as db:
-        tables = db.execute(text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")).fetchall()
-        return {"tables": [t[0] for t in tables]}
-
-
-@app.get("/import-status")
-async def import_status():
-    """Get CSV import status"""
-    with SessionLocal() as db:
-        imports = db.execute(text("SELECT * FROM csv_imports ORDER BY imported_at DESC")).fetchall()
-        return {"imports": [dict(imp._mapping) for imp in imports]}
 
 
 # Graph API Endpoints
