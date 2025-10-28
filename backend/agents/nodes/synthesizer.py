@@ -97,7 +97,31 @@ class SynthesizerAgent(BaseAgent):
                 context_parts.append(f"\nMAINTENANCE DATA ({wo_count} work orders):")
                 work_orders = maintenance_result.get("work_orders", [])[:3]
                 for i, wo in enumerate(work_orders, 1):
-                    context_parts.append(f"  {i}. WO#{wo.get('nr', 'N/A')}: {wo.get('short_description', 'No description')}")
+                    # Get best available description
+                    short_desc = wo.get('shortDescription', wo.get('short_description', ''))
+                    full_desc = wo.get('description', '')
+                    comment = wo.get('comment', '')
+                    
+                    # Use short description if available, otherwise use full description (truncated)
+                    desc = short_desc if short_desc else (full_desc[:80] + '...' if len(full_desc) > 80 else full_desc)
+                    
+                    # Build work order line with key details
+                    wo_line = f"  {i}. WO#{wo.get('nr', 'N/A')} ({wo.get('sensor_name', 'N/A')}): {desc or 'No description'}"
+                    context_parts.append(wo_line)
+                    
+                    # Add comment if present
+                    if comment and len(comment) < 100:
+                        context_parts.append(f"     Comment: {comment}")
+                    
+                    # Add status info
+                    status = wo.get('status', '')
+                    priority = wo.get('priority', '')
+                    if status or priority:
+                        status_info = []
+                        if status: status_info.append(f"Status: {status}")
+                        if priority: status_info.append(f"Priority: {priority}")
+                        context_parts.append(f"     {', '.join(status_info)}")
+                        
                 if wo_count > 3:
                     context_parts.append(f"  ... and {wo_count - 3} more work orders")
             else:
