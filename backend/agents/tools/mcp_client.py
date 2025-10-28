@@ -61,8 +61,6 @@ class MCPClient:
             return
         
         try:
-            print(f"[MCP] Initializing session with {self.base_url}/mcp")
-            
             # Initialize MCP session via POST
             response = await self.http_client.post(
                 f"{self.base_url}/mcp",
@@ -91,10 +89,7 @@ class MCPClient:
             if not self.session_id:
                 raise RuntimeError("No session ID in response headers")
             
-            print(f"[MCP] Session initialized: {self.session_id}")
-            
         except Exception as e:
-            print(f"[MCP] Failed to initialize: {e}")
             raise RuntimeError(f"Failed to connect to {self.service.value} MCP: {e}")
     
     async def health_check(self) -> bool:
@@ -105,15 +100,9 @@ class MCPClient:
             True if server is responsive
         """
         try:
-            print(f"[MCP] Starting health check for {self.service.value}...")
             await self._ensure_connected()
-            result = self.session_id is not None
-            print(f"[MCP] Health check result: {result}, session_id: {self.session_id}")
-            return result
-        except Exception as e:
-            print(f"[MCP] Health check exception: {e}")
-            import traceback
-            traceback.print_exc()
+            return self.session_id is not None
+        except Exception:
             return False
     
     async def list_tools(self) -> List[Dict[str, Any]]:
@@ -168,8 +157,6 @@ class MCPClient:
         try:
             await self._ensure_connected()
             
-            print(f"[MCP] Calling tool: {tool_name}")
-            
             # Call tool via POST with session ID
             response = await self.http_client.post(
                 f"{self.base_url}/mcp",
@@ -190,8 +177,6 @@ class MCPClient:
             )
             response.raise_for_status()
             
-            print(f"[MCP] Response status: {response.status_code}")
-            
             # MCP Streamable HTTP returns SSE format
             # Parse SSE to extract JSON-RPC message
             response_text = response.text
@@ -208,7 +193,6 @@ class MCPClient:
                         continue
             
             if not result:
-                print(f"[MCP] Failed to parse SSE response: {response_text[:200]}")
                 raise RuntimeError("Could not parse SSE response")
             
             # Extract result from JSON-RPC response
@@ -233,7 +217,6 @@ class MCPClient:
             return {}
                 
         except Exception as e:
-            print(f"[MCP] Tool call failed: {e}")
             raise RuntimeError(
                 f"Failed to call {tool_name} on {self.service.value} MCP: {e}"
             )

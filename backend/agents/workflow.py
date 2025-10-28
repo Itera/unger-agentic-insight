@@ -150,7 +150,8 @@ Your analysis (JSON only):"""
             
         except Exception as e:
             # Fallback: invoke all agents if classification fails
-            print(f"Intent classification failed: {e}")
+            import logging
+            logging.getLogger(__name__).warning(f"Intent classification failed: {e}")
             state["agents_to_invoke"] = ["graph", "maintenance", "adx"]
         
         return state
