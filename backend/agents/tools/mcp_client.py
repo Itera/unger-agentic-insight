@@ -189,7 +189,27 @@ class MCPClient:
                 }
             )
             response.raise_for_status()
-            result = response.json()
+            
+            print(f"[MCP] Response status: {response.status_code}")
+            
+            # MCP Streamable HTTP returns SSE format
+            # Parse SSE to extract JSON-RPC message
+            response_text = response.text
+            
+            # SSE format: "event: message\ndata: {json}\n\n"
+            result = None
+            for line in response_text.split('\n'):
+                if line.startswith('data: '):
+                    json_str = line[6:]  # Remove "data: " prefix
+                    try:
+                        result = json.loads(json_str)
+                        break
+                    except:
+                        continue
+            
+            if not result:
+                print(f"[MCP] Failed to parse SSE response: {response_text[:200]}")
+                raise RuntimeError("Could not parse SSE response")
             
             # Extract result from JSON-RPC response
             if "result" in result:
