@@ -9,9 +9,8 @@ import os
 from typing import Dict, Any, List, Optional
 from enum import Enum
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-from mcp.client.sse import sse_client
+import httpx
+import json
 
 
 class MCPService(Enum):
@@ -38,9 +37,9 @@ class MCPClient:
         """
         self.service = service
         self.base_url = base_url or self._get_default_url(service)
-        self.session: Optional[ClientSession] = None
-        self._sse_context = None
-        self._session_context = None
+        self.session_id: Optional[str] = None
+        self.http_client = httpx.AsyncClient(timeout=30.0)
+        self._message_id = 0
     
     def _get_default_url(self, service: MCPService) -> str:
         """Get default URL from environment variables."""
@@ -51,21 +50,51 @@ class MCPClient:
         else:
             raise ValueError(f"Unknown MCP service: {service}")
     
+    def _get_next_id(self) -> int:
+        """Get next message ID."""
+        self._message_id += 1
+        return self._message_id
+    
     async def _ensure_connected(self) -> None:
-        """Ensure MCP session is connected."""
-        if self.session is not None:
+        """Ensure MCP session is initialized using Streamable HTTP protocol."""
+        if self.session_id is not None:
             return
         
         try:
-            # Use SSE client for HTTP transport
-            self._sse_context = sse_client(url=f"{self.base_url}/mcp")
-            self._session_context, session = await self._sse_context.__aenter__()
+            print(f"[MCP] Initializing session with {self.base_url}/mcp")
             
-            # Initialize the session
-            await session.initialize()
-            self.session = session
+            # Initialize MCP session via POST
+            response = await self.http_client.post(
+                f"{self.base_url}/mcp",
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/event-stream"
+                },
+                json={
+                    "jsonrpc": "2.0",
+                    "id": self._get_next_id(),
+                    "method": "initialize",
+                    "params": {
+                        "protocolVersion": "2024-11-05",
+                        "capabilities": {},
+                        "clientInfo": {
+                            "name": "unger-agentic-insight",
+                            "version": "1.0.0"
+                        }
+                    }
+                }
+            )
+            response.raise_for_status()
+            
+            # Extract session ID from response headers
+            self.session_id = response.headers.get("mcp-session-id")
+            if not self.session_id:
+                raise RuntimeError("No session ID in response headers")
+            
+            print(f"[MCP] Session initialized: {self.session_id}")
             
         except Exception as e:
+            print(f"[MCP] Failed to initialize: {e}")
             raise RuntimeError(f"Failed to connect to {self.service.value} MCP: {e}")
     
     async def health_check(self) -> bool:
@@ -76,9 +105,15 @@ class MCPClient:
             True if server is responsive
         """
         try:
+            print(f"[MCP] Starting health check for {self.service.value}...")
             await self._ensure_connected()
-            return self.session is not None
-        except Exception:
+            result = self.session_id is not None
+            print(f"[MCP] Health check result: {result}, session_id: {self.session_id}")
+            return result
+        except Exception as e:
+            print(f"[MCP] Health check exception: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     async def list_tools(self) -> List[Dict[str, Any]]:
@@ -90,17 +125,25 @@ class MCPClient:
         """
         try:
             await self._ensure_connected()
-            tools_list = await self.session.list_tools()
             
-            # Convert Tool objects to dicts
-            return [
-                {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "inputSchema": tool.inputSchema
+            response = await self.http_client.post(
+                f"{self.base_url}/mcp",
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/event-stream",
+                    "mcp-session-id": self.session_id
+                },
+                json={
+                    "jsonrpc": "2.0",
+                    "id": self._get_next_id(),
+                    "method": "tools/list",
+                    "params": {}
                 }
-                for tool in tools_list.tools
-            ]
+            )
+            response.raise_for_status()
+            result = response.json()
+            
+            return result.get("result", {}).get("tools", [])
         except Exception as e:
             raise RuntimeError(f"Failed to list tools from {self.service.value} MCP: {e}")
     
@@ -125,47 +168,64 @@ class MCPClient:
         try:
             await self._ensure_connected()
             
-            # Call tool using MCP SDK
-            result = await self.session.call_tool(tool_name, arguments)
+            print(f"[MCP] Calling tool: {tool_name}")
             
-            # Extract content from result
-            if result.content:
-                # MCP returns a list of content items
-                if len(result.content) == 1:
-                    content_item = result.content[0]
-                    if hasattr(content_item, 'text'):
-                        # Try to parse as JSON if it's a text response
-                        import json
-                        try:
-                            return json.loads(content_item.text)
-                        except:
-                            return {"result": content_item.text}
-                    return {"result": str(content_item)}
-                else:
-                    return {"content": [str(item) for item in result.content]}
+            # Call tool via POST with session ID
+            response = await self.http_client.post(
+                f"{self.base_url}/mcp",
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/event-stream",
+                    "mcp-session-id": self.session_id
+                },
+                json={
+                    "jsonrpc": "2.0",
+                    "id": self._get_next_id(),
+                    "method": "tools/call",
+                    "params": {
+                        "name": tool_name,
+                        "arguments": arguments
+                    }
+                }
+            )
+            response.raise_for_status()
+            result = response.json()
             
-            return {"success": True}
+            # Extract result from JSON-RPC response
+            if "result" in result:
+                tool_result = result["result"]
+                # MCP tools return {"content": [{"type": "text", "text": "..."}]}
+                if isinstance(tool_result, dict) and "content" in tool_result:
+                    content_items = tool_result["content"]
+                    if content_items and len(content_items) > 0:
+                        first_item = content_items[0]
+                        if isinstance(first_item, dict) and "text" in first_item:
+                            text = first_item["text"]
+                            # Try to parse as JSON
+                            try:
+                                return json.loads(text)
+                            except:
+                                return {"result": text}
+                return tool_result
+            elif "error" in result:
+                raise RuntimeError(f"MCP tool error: {result['error']}")
+            
+            return {}
                 
         except Exception as e:
+            print(f"[MCP] Tool call failed: {e}")
             raise RuntimeError(
                 f"Failed to call {tool_name} on {self.service.value} MCP: {e}"
             )
     
     async def close(self):
-        """Close MCP session."""
-        if self._session_context:
+        """Close MCP session and HTTP client."""
+        if self.http_client:
             try:
-                await self._session_context.__aexit__(None, None, None)
+                await self.http_client.aclose()
             except:
                 pass
-        if self._sse_context:
-            try:
-                await self._sse_context.__aexit__(None, None, None)
-            except:
-                pass
-        self.session = None
-        self._session_context = None
-        self._sse_context = None
+        self.session_id = None
     
     async def __aenter__(self):
         """Async context manager entry."""

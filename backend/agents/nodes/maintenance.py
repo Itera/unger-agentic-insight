@@ -42,9 +42,14 @@ class MaintenanceAgent(BaseAgent):
             logger = logging.getLogger(__name__)
             
             try:
+                print(f"[DEBUG] Attempting MCP health check...")
                 is_healthy = await self.mcp_client.health_check()
+                print(f"[DEBUG] MCP health check result: {is_healthy}")
                 logger.info(f"MCP health check result: {is_healthy}")
             except Exception as e:
+                print(f"[ERROR] MCP health check failed: {e}")
+                import traceback
+                traceback.print_exc()
                 logger.error(f"MCP health check failed: {e}", exc_info=True)
                 return {
                     "work_orders": [],
