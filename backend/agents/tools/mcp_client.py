@@ -2,13 +2,16 @@
 Model Context Protocol (MCP) client for external service integration.
 
 Provides a unified interface for agents to interact with MCP servers
-(Maintenance API, ADX, and future services).
+(Maintenance API, ADX, and future services) using the official MCP SDK.
 """
 
-import httpx
+import os
 from typing import Dict, Any, List, Optional
 from enum import Enum
-import os
+
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from mcp.client.sse import sse_client
 
 
 class MCPService(Enum):
@@ -19,9 +22,10 @@ class MCPService(Enum):
 
 class MCPClient:
     """
-    Client for MCP protocol communication.
+    Client for MCP protocol communication using official SDK.
     
-    Handles tool invocation, health checks, and error handling for MCP servers.
+    Handles tool invocation, health checks, and error handling for MCP servers
+    using the official MCP SDK with SSE transport.
     """
     
     def __init__(self, service: MCPService, base_url: Optional[str] = None):
@@ -34,7 +38,9 @@ class MCPClient:
         """
         self.service = service
         self.base_url = base_url or self._get_default_url(service)
-        self.client = httpx.AsyncClient(timeout=30.0)
+        self.session: Optional[ClientSession] = None
+        self._sse_context = None
+        self._session_context = None
     
     def _get_default_url(self, service: MCPService) -> str:
         """Get default URL from environment variables."""
@@ -45,6 +51,23 @@ class MCPClient:
         else:
             raise ValueError(f"Unknown MCP service: {service}")
     
+    async def _ensure_connected(self) -> None:
+        """Ensure MCP session is connected."""
+        if self.session is not None:
+            return
+        
+        try:
+            # Use SSE client for HTTP transport
+            self._sse_context = sse_client(url=f"{self.base_url}/mcp")
+            self._session_context, session = await self._sse_context.__aenter__()
+            
+            # Initialize the session
+            await session.initialize()
+            self.session = session
+            
+        except Exception as e:
+            raise RuntimeError(f"Failed to connect to {self.service.value} MCP: {e}")
+    
     async def health_check(self) -> bool:
         """
         Check if MCP server is healthy.
@@ -53,8 +76,8 @@ class MCPClient:
             True if server is responsive
         """
         try:
-            response = await self.client.get(f"{self.base_url}/health")
-            return response.status_code == 200
+            await self._ensure_connected()
+            return self.session is not None
         except Exception:
             return False
     
@@ -66,13 +89,18 @@ class MCPClient:
             List of tool definitions
         """
         try:
-            response = await self.client.post(
-                f"{self.base_url}/mcp",
-                json={"method": "tools/list", "params": {}}
-            )
-            response.raise_for_status()
-            result = response.json()
-            return result.get("result", {}).get("tools", [])
+            await self._ensure_connected()
+            tools_list = await self.session.list_tools()
+            
+            # Convert Tool objects to dicts
+            return [
+                {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "inputSchema": tool.inputSchema
+                }
+                for tool in tools_list.tools
+            ]
         except Exception as e:
             raise RuntimeError(f"Failed to list tools from {self.service.value} MCP: {e}")
     
@@ -95,39 +123,49 @@ class MCPClient:
             RuntimeError: If tool invocation fails
         """
         try:
-            response = await self.client.post(
-                f"{self.base_url}/mcp",
-                json={
-                    "method": "tools/call",
-                    "params": {
-                        "name": tool_name,
-                        "arguments": arguments
-                    }
-                }
-            )
-            response.raise_for_status()
-            result = response.json()
+            await self._ensure_connected()
             
-            # MCP protocol returns result in "result" field
-            if "result" in result:
-                return result["result"]
-            elif "error" in result:
-                raise RuntimeError(f"MCP tool error: {result['error']}")
-            else:
-                return result
+            # Call tool using MCP SDK
+            result = await self.session.call_tool(tool_name, arguments)
+            
+            # Extract content from result
+            if result.content:
+                # MCP returns a list of content items
+                if len(result.content) == 1:
+                    content_item = result.content[0]
+                    if hasattr(content_item, 'text'):
+                        # Try to parse as JSON if it's a text response
+                        import json
+                        try:
+                            return json.loads(content_item.text)
+                        except:
+                            return {"result": content_item.text}
+                    return {"result": str(content_item)}
+                else:
+                    return {"content": [str(item) for item in result.content]}
+            
+            return {"success": True}
                 
-        except httpx.HTTPError as e:
+        except Exception as e:
             raise RuntimeError(
                 f"Failed to call {tool_name} on {self.service.value} MCP: {e}"
             )
-        except Exception as e:
-            raise RuntimeError(
-                f"Unexpected error calling {tool_name} on {self.service.value} MCP: {e}"
-            )
     
     async def close(self):
-        """Close HTTP client."""
-        await self.client.aclose()
+        """Close MCP session."""
+        if self._session_context:
+            try:
+                await self._session_context.__aexit__(None, None, None)
+            except:
+                pass
+        if self._sse_context:
+            try:
+                await self._sse_context.__aexit__(None, None, None)
+            except:
+                pass
+        self.session = None
+        self._session_context = None
+        self._sse_context = None
     
     async def __aenter__(self):
         """Async context manager entry."""

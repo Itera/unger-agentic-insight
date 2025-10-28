@@ -38,7 +38,20 @@ class MaintenanceAgent(BaseAgent):
         
         try:
             # Check MCP health
-            is_healthy = await self.mcp_client.health_check()
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            try:
+                is_healthy = await self.mcp_client.health_check()
+                logger.info(f"MCP health check result: {is_healthy}")
+            except Exception as e:
+                logger.error(f"MCP health check failed: {e}", exc_info=True)
+                return {
+                    "work_orders": [],
+                    "sensors_checked": [],
+                    "error": f"Maintenance MCP connection error: {str(e)}"
+                }
+            
             if not is_healthy:
                 return {
                     "work_orders": [],
