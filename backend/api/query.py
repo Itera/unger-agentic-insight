@@ -1,7 +1,7 @@
 """
 Query API Router
 
-Handles AI-powered natural language queries with optional ADX integration.
+Handles AI-powered natural language queries using multi-agent orchestration.
 """
 
 import json
@@ -17,6 +17,7 @@ from services.graph_service import graph_service
 from core.dependencies import get_openai_client
 from core.config import settings
 from core.prompt_templates import get_guidelines_template
+from agents import get_coordinator
 
 
 router = APIRouter(prefix="", tags=["query"])
@@ -303,48 +304,32 @@ async def execute_adx_query_from_response(response: str) -> Optional[List[Dict[s
 @router.post("/query", response_model=QueryResponse)
 async def process_query(request: QueryRequest):
     """
-    Process natural language queries using OpenAI agent and ADX MCP
+    Process natural language queries using multi-agent orchestration
     
     Args:
-        request: Query request with query text and ADX flag
+        request: Query request with query text
         
     Returns:
-        Query response with AI analysis and optional data
+        Query response with AI analysis and execution trace
     """
-    openai_client = get_openai_client()
-    if not openai_client:
-        raise HTTPException(status_code=503, detail="OpenAI client not available")
-    
     try:
-        # Get schema information from ADX MCP
-        schema_info = await get_schema_info(request.use_adx)
+        # Get multi-agent coordinator
+        coordinator = get_coordinator()
         
-        # Create system prompt for the OpenAI agent
-        system_prompt = create_system_prompt(schema_info, request.use_adx)
-        
-        # Query OpenAI agent
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": request.query}
-            ],
-            temperature=0.1
+        # Execute workflow
+        result = await coordinator.run(
+            query=request.query,
+            user_request={"use_adx": request.use_adx if hasattr(request, 'use_adx') else False}
         )
         
-        agent_response = response.choices[0].message.content
-        
-        # Try to extract and execute any KQL query from the response
-        data = None
-        if request.use_adx:
-            data = await execute_adx_query_from_response(agent_response)
-        
         return QueryResponse(
-            query=request.query,
-            response=agent_response,
-            data=data,
-            source="adx" if request.use_adx else "local",
-            timestamp=datetime.now()
+            query=result["query"],
+            response=result["response"],
+            data=None,  # Data is now embedded in agent results
+            source="multi-agent",
+            timestamp=datetime.now(),
+            execution_trace=result.get("execution_trace"),
+            errors=result.get("errors")
         )
     
     except Exception as e:
@@ -354,55 +339,40 @@ async def process_query(request: QueryRequest):
 @router.post("/query/contextual", response_model=QueryResponse)
 async def process_contextual_query(request: ContextualQueryRequest):
     """
-    Process contextual natural language queries with graph navigation scope
+    Process natural language queries using multi-agent orchestration
+    
+    Note: Context scoping is in IDEA_BANK for future implementation.
+    Currently uses same multi-agent workflow as /query endpoint.
     
     Args:
-        request: Contextual query request with context data
+        request: Query request with query text and optional context
         
     Returns:
-        Query response with scoped AI analysis
+        Query response with AI analysis and execution trace
     """
-    openai_client = get_openai_client()
-    if not openai_client:
-        raise HTTPException(status_code=503, detail="OpenAI client not available")
-    
     try:
-        # Get schema information from ADX MCP
-        schema_info = await get_schema_info(request.use_adx)
+        # Get multi-agent coordinator
+        coordinator = get_coordinator()
         
-        # Get contextual graph data if context is provided
-        context_data = None
-        if request.context and request.context.get('nodeType') and request.context.get('nodeName'):
-            context_data = await get_contextual_graph_data(request.context)
-        
-        # Create contextual system prompt
-        system_prompt = create_contextual_system_prompt(schema_info, context_data, request.use_adx)
-        
-        # Query OpenAI agent with context
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": request.query}
-            ],
-            temperature=0.1
+        # Execute workflow (context scoping is future enhancement)
+        result = await coordinator.run(
+            query=request.query,
+            user_request={
+                "use_adx": request.use_adx if hasattr(request, 'use_adx') else False,
+                "context": request.context if hasattr(request, 'context') else None
+            }
         )
         
-        agent_response = response.choices[0].message.content
-        
-        # Try to extract and execute any KQL query from the response
-        data = None
-        if request.use_adx:
-            data = await execute_adx_query_from_response(agent_response)
-        
         return QueryResponse(
-            query=request.query,
-            response=agent_response,
-            data=data,
-            source=f"{'adx' if request.use_adx else 'local'}-contextual",
+            query=result["query"],
+            response=result["response"],
+            data=None,  # Data is now embedded in agent results
+            source="multi-agent",
             timestamp=datetime.now(),
-            context_used=serialize_neo4j_data(context_data) if context_data else None  # Serialize context data
+            execution_trace=result.get("execution_trace"),
+            errors=result.get("errors"),
+            context_used=None  # Context scoping for future implementation
         )
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Contextual query processing failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Query processing failed: {str(e)}")
